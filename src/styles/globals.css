@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  ::selection {
+    background-color: rgba(123, 63, 0, 0.15);
+  }
+
+  /* Hide spinners on number inputs — bid inputs use formatted strings. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  /* Custom focus ring — restrained, accessible. */
+  *:focus-visible {
+    outline: 2px solid theme('colors.ink.DEFAULT');
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  .kicker {
+    @apply text-xs font-medium tracking-kicker uppercase text-muted;
+  }
+
+  .display-serif {
+    @apply font-display;
+    font-feature-settings: 'lnum';
+  }
+
+  .hairline {
+    @apply border-line;
+  }
+
+  /* Price tag style for prominent currency rendering. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
