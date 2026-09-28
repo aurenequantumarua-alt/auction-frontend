@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { useCreateAuction } from '@/features/auctions/hooks';
 import { ConnectBankDialog, isBankAccountRequired } from '@/components/common/ConnectBankDialog';
-import { extractApiError, api } from '@/lib/api';
+import { extractApiError } from '@/lib/api';
+import { uploadImage } from '@/lib/uploadImage';
 
 const Schema = z.object({
   title: z.string().min(3).max(140),
@@ -40,7 +41,7 @@ const CONDITIONS = [
 export const CreateAuctionPage = () => {
   const navigate = useNavigate();
   const create = useCreateAuction();
-  const [images, setImages] = useState<{ url: string; isCover: boolean }[]>([]);
+  const [images, setImages] = useState<{ url: string; previewUrl?: string; isCover: boolean }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [bankGateOpen, setBankGateOpen] = useState(false);
 
@@ -66,11 +67,13 @@ export const CreateAuctionPage = () => {
 
   const handleFile = async (file: File) => {
     setUploading(true);
+    const localPreview = URL.createObjectURL(file);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const { data } = await api.post('/uploads/image', fd);
-      setImages((prev) => [...prev, { url: data.url, isCover: prev.length === 0 }]);
+      const url = await uploadImage(file);
+      setImages((prev) => [
+        ...prev,
+        { url, previewUrl: localPreview, isCover: prev.length === 0 },
+      ]);
       toast.success('Image uploaded');
     } catch (err) {
       toast.error(extractApiError(err).message);
@@ -98,7 +101,7 @@ export const CreateAuctionPage = () => {
         startsAt: new Date(data.startsAt).toISOString(),
         endsAt: new Date(data.endsAt).toISOString(),
         tags: (data.tags ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-        images,
+        images: images.map(({ url, isCover }) => ({ url, isCover })),
         publish,
       });
       toast.success(publish ? 'Listing published' : 'Draft saved');
@@ -229,7 +232,7 @@ export const CreateAuctionPage = () => {
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {images.map((img, idx) => (
               <div key={idx} className="group relative aspect-square overflow-hidden rounded border border-line">
-                <img src={img.url} alt="" className="h-full w-full object-cover" />
+                <img src={img.previewUrl || img.url} alt="" className="h-full w-full object-cover" />
                 <button
                   type="button"
                   className="absolute right-1.5 top-1.5 rounded bg-canvas/95 p-1 opacity-0 transition-opacity group-hover:opacity-100"
