@@ -1,7 +1,9 @@
 import { Link, Outlet } from 'react-router-dom';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 
 export const AuthLayout = () => (
   <div className="grid min-h-screen lg:grid-cols-2">
+    <ScrollToTop />
     <div className="flex items-center justify-center bg-canvas px-6 py-16">
       <div className="w-full max-w-md">
         <Link to="/" className="font-display text-3xl font-semibold tracking-tight text-ink">
