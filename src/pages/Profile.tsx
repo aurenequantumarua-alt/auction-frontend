@@ -14,6 +14,8 @@ const notifTitle: Record<string, string> = {
   WINNER_FORFEITED: 'Winner forfeited',
   AUCTION_EXPIRED: 'Auction expired',
   AUCTION_SOLD: 'Auction sold',
+  NEW_INQUIRY: 'New question on your listing',
+  INQUIRY_ANSWERED: 'Your question was answered',
 };
 
 export const ProfilePage = () => {
@@ -50,18 +52,48 @@ export const ProfilePage = () => {
         ) : (data?.items.length ?? 0) === 0 ? (
           <li className="p-5 text-sm text-muted">No notifications yet.</li>
         ) : (
-          data!.items.map((n) => (
-            <li
-              key={n.id}
-              className={`flex items-start gap-3 border-b border-line px-5 py-4 last:border-b-0 ${n.readAt ? '' : 'bg-accent/5'}`}
-            >
-              <div className={`mt-1.5 h-1.5 w-1.5 flex-none rounded-full ${n.readAt ? 'bg-line' : 'bg-accent'}`} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-ink">{notifTitle[n.type] ?? n.type}</p>
-                <p className="text-xs text-muted">{formatRelative(n.createdAt)}</p>
-              </div>
-            </li>
-          ))
+          data!.items.map((n) => {
+            const auctionId = n.payload?.auctionId as string | undefined;
+            const auctionTitle = n.payload?.auctionTitle as string | undefined;
+            const preview =
+              (n.payload?.question as string | undefined) ??
+              (n.payload?.answerPreview as string | undefined);
+
+            const content = (
+              <>
+                <p className="text-sm font-medium text-ink">
+                  {notifTitle[n.type] ?? n.type}
+                  {auctionTitle && (
+                    <span className="font-normal text-muted"> · {auctionTitle}</span>
+                  )}
+                </p>
+                {preview && (
+                  <p className="mt-0.5 line-clamp-1 text-xs text-muted/90 italic">
+                    "{preview}"
+                  </p>
+                )}
+                <p className="mt-1 text-[11px] text-muted">{formatRelative(n.createdAt)}</p>
+              </>
+            );
+
+            return (
+              <li
+                key={n.id}
+                className={`flex items-start gap-3 border-b border-line px-5 py-4 last:border-b-0 transition-colors ${n.readAt ? '' : 'bg-accent/5'}`}
+              >
+                <div className={`mt-1.5 h-1.5 w-1.5 flex-none rounded-full ${n.readAt ? 'bg-line' : 'bg-accent'}`} />
+                <div className="flex-1">
+                  {auctionId ? (
+                    <Link to={`/auctions/${auctionId}`} className="block hover:opacity-80">
+                      {content}
+                    </Link>
+                  ) : (
+                    content
+                  )}
+                </div>
+              </li>
+            );
+          })
         )}
       </ul>
     </div>
