@@ -12,7 +12,7 @@ const queryFromParams = (sp: URLSearchParams): AuctionListQuery => ({
   category: sp.get('category') ?? undefined,
   condition: (sp.get('condition') as AuctionListQuery['condition']) ?? undefined,
   status: (sp.get('status') as AuctionListQuery['status']) ?? undefined,
-  sort: (sp.get('sort') as AuctionListQuery['sort']) ?? 'ending_soon',
+  sort: (sp.get('sort') as AuctionListQuery['sort']) ?? 'newest',
   page: Number(sp.get('page') ?? 1),
   pageSize: 24,
 });
@@ -53,7 +53,7 @@ export const BrowsePage = () => {
           <EmptyState
             title="No auctions match those filters"
             description="Try widening your search — clear a filter or change the category."
-            action={<Button onClick={() => update({ sort: 'ending_soon', page: 1 })}>Clear filters</Button>}
+            action={<Button onClick={() => update({ sort: 'newest', page: 1 })}>Clear filters</Button>}
           />
         ) : (
           <>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { auctionsApi, type AuctionListQuery, type CreateAuctionInput } from './api';
+import { auctionsApi, inquiriesApi, type AuctionListQuery, type CreateAuctionInput } from './api';
 
 export const auctionKeys = {
   all: ['auctions'] as const,
@@ -10,6 +10,7 @@ export const auctionKeys = {
   myBids: () => ['auctions', 'me', 'bids'] as const,
   myWins: () => ['auctions', 'me', 'wins'] as const,
   bids: (id: string) => ['auctions', id, 'bids'] as const,
+  inquiries: (auctionId: string) => ['inquiries', auctionId] as const,
 };
 
 export const useAuctions = (query: AuctionListQuery) =>
@@ -101,6 +102,19 @@ export const useCancelAuction = (auctionId: string) => {
   });
 };
 
+export const useBuyNow = (auctionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => auctionsApi.buyNow(auctionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: auctionKeys.detail(auctionId) });
+      qc.invalidateQueries({ queryKey: auctionKeys.all });
+      qc.invalidateQueries({ queryKey: auctionKeys.myBids() });
+      qc.invalidateQueries({ queryKey: auctionKeys.myWins() });
+    },
+  });
+};
+
 export const useWatchToggle = (auctionId: string) => {
   const qc = useQueryClient();
   return useMutation({
@@ -117,5 +131,47 @@ export const useReportAuction = (auctionId: string) => {
   return useMutation({
     mutationFn: (input: { reason: string; details: string }) => 
       auctionsApi.report(auctionId, input.reason, input.details),
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Auction Q&A / Inquiries
+// ---------------------------------------------------------------------------
+
+export const useInquiries = (auctionId: string) =>
+  useQuery({
+    queryKey: auctionKeys.inquiries(auctionId),
+    queryFn: () => inquiriesApi.list(auctionId),
+    enabled: !!auctionId,
+  });
+
+export const useAskQuestion = (auctionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (question: string) => inquiriesApi.ask(auctionId, question),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: auctionKeys.inquiries(auctionId) });
+    },
+  });
+};
+
+export const useAnswerQuestion = (auctionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { inquiryId: string; answer: string; imageUrl?: string }) =>
+      inquiriesApi.answer(input.inquiryId, input.answer, input.imageUrl),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: auctionKeys.inquiries(auctionId) });
+    },
+  });
+};
+
+export const usePinInquiry = (auctionId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inquiryId: string) => inquiriesApi.pin(inquiryId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: auctionKeys.inquiries(auctionId) });
+    },
   });
 };

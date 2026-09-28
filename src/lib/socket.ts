@@ -27,4 +27,6 @@ export const SOCKET_EVENTS = {
   auctionStatusChanged: 'auction:status-changed',
   auctionExtended: 'auction:extended',
   notificationNew: 'notification:new',
+  inquiryNew: 'inquiry:new',
+  inquiryAnswered: 'inquiry:answered',
 } as const;

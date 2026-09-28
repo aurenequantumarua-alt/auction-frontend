@@ -28,6 +28,16 @@ export const authApi = {
     return data;
   },
 
+  forgotPassword: async (input: { email: string }): Promise<{ ok: boolean; devCode?: string }> => {
+    const { data } = await api.post<{ ok: boolean; devCode?: string }>('/auth/forgot-password', input);
+    return data;
+  },
+
+  resetPassword: async (input: { email: string; code: string; newPassword: string }): Promise<AuthResponse> => {
+    const { data } = await api.post<AuthResponse>('/auth/reset-password', input);
+    return data;
+  },
+
   refresh: async (): Promise<AuthResponse | null> => {
     try {
       const { data } = await axios.post<AuthResponse>(

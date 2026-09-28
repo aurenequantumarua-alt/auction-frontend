@@ -27,17 +27,24 @@ export const useRealtimeBridge = () => {
     const onNotification = () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
     };
+    const onInquiry = (e: { auctionId: string }) => {
+      qc.invalidateQueries({ queryKey: ['inquiries', e.auctionId] });
+    };
 
     s.on(SOCKET_EVENTS.bidPlaced, onBidPlaced);
     s.on(SOCKET_EVENTS.auctionStatusChanged, onStatusChanged);
     s.on(SOCKET_EVENTS.auctionExtended, onExtended);
     s.on(SOCKET_EVENTS.notificationNew, onNotification);
+    s.on(SOCKET_EVENTS.inquiryNew, onInquiry);
+    s.on(SOCKET_EVENTS.inquiryAnswered, onInquiry);
 
     return () => {
       s.off(SOCKET_EVENTS.bidPlaced, onBidPlaced);
       s.off(SOCKET_EVENTS.auctionStatusChanged, onStatusChanged);
       s.off(SOCKET_EVENTS.auctionExtended, onExtended);
       s.off(SOCKET_EVENTS.notificationNew, onNotification);
+      s.off(SOCKET_EVENTS.inquiryNew, onInquiry);
+      s.off(SOCKET_EVENTS.inquiryAnswered, onInquiry);
     };
   }, [qc]);
 };

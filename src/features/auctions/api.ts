@@ -14,7 +14,7 @@ export interface AuctionListQuery {
   brand?: string;
   condition?: 'NEW' | 'LIKE_NEW' | 'GOOD' | 'FAIR';
   status?: 'UPCOMING' | 'LIVE' | 'ENDED' | 'SOLD';
-  sort?: 'ending_soon' | 'newest' | 'highest_bid' | 'most_bids';
+  sort?: 'newest' | 'ending_soon' | 'highest_bid' | 'most_bids';
   minPrice?: number;
   maxPrice?: number;
 }
@@ -28,6 +28,7 @@ export interface CreateAuctionInput {
   size: string;
   basePrice: string;
   minIncrement: string;
+  buyNowPrice?: string;
   startsAt: string;
   endsAt: string;
   tags: string[];
@@ -68,6 +69,11 @@ export const auctionsApi = {
 
   endNow: async (id: string): Promise<AuctionListItem> => {
     const { data } = await api.post<AuctionListItem>(`/auctions/${id}/end-now`);
+    return data;
+  },
+
+  buyNow: async (id: string): Promise<AuctionListItem> => {
+    const { data } = await api.post<AuctionListItem>(`/auctions/${id}/buy-now`);
     return data;
   },
 
@@ -117,5 +123,43 @@ export const auctionsApi = {
 
   report: async (id: string, reason: string, details: string): Promise<void> => {
     await api.post(`/auctions/${id}/report`, { reason, details });
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Auction Q&A / Inquiries
+// ---------------------------------------------------------------------------
+
+export interface Inquiry {
+  id: string;
+  auctionId: string;
+  question: string;
+  answer: string | null;
+  answeredAt: string | null;
+  imageUrl: string | null;
+  isPinned: boolean;
+  createdAt: string;
+  asker: { id: string; name: string; avatarUrl: string | null };
+}
+
+export const inquiriesApi = {
+  list: async (auctionId: string): Promise<{ items: Inquiry[] }> => {
+    const { data } = await api.get<{ items: Inquiry[] }>(`/auctions/${auctionId}/inquiries`);
+    return data;
+  },
+
+  ask: async (auctionId: string, question: string): Promise<Inquiry> => {
+    const { data } = await api.post<Inquiry>(`/auctions/${auctionId}/inquiries`, { question });
+    return data;
+  },
+
+  answer: async (inquiryId: string, answer: string, imageUrl?: string): Promise<Inquiry> => {
+    const { data } = await api.post<Inquiry>(`/inquiries/${inquiryId}/answer`, { answer, imageUrl });
+    return data;
+  },
+
+  pin: async (inquiryId: string): Promise<Inquiry> => {
+    const { data } = await api.post<Inquiry>(`/inquiries/${inquiryId}/pin`);
+    return data;
   },
 };

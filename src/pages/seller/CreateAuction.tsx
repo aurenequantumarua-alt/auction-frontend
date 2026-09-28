@@ -22,6 +22,7 @@ const Schema = z.object({
   size: z.string().min(1).max(20),
   basePrice: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount'),
   minIncrement: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount'),
+  buyNowPrice: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount').optional().or(z.literal('')),
   startsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid date'),
   endsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid date'),
   tags: z.string().optional(),
@@ -93,6 +94,7 @@ export const CreateAuctionPage = () => {
         size: data.size,
         basePrice: data.basePrice,
         minIncrement: data.minIncrement,
+        ...(data.buyNowPrice ? { buyNowPrice: data.buyNowPrice } : {}),
         startsAt: new Date(data.startsAt).toISOString(),
         endsAt: new Date(data.endsAt).toISOString(),
         tags: (data.tags ?? '').split(',').map((s) => s.trim()).filter(Boolean),
@@ -186,6 +188,22 @@ export const CreateAuctionPage = () => {
             <Input id="minIncrement" {...register('minIncrement')} invalid={!!errors.minIncrement} className="mt-1.5 tabular" />
             <FieldError message={errors.minIncrement?.message} />
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="buyNowPrice">Buy It Now price (₹) — optional</Label>
+          <Input
+            id="buyNowPrice"
+            {...register('buyNowPrice')}
+            invalid={!!errors.buyNowPrice}
+            className="mt-1.5 tabular"
+            placeholder="Leave blank for auction-only"
+          />
+          <FieldError message={errors.buyNowPrice?.message} />
+          <p className="mt-1 text-xs text-muted">
+            Optional: set a price at which a buyer can purchase and end this auction immediately.
+            Must be at least 20% above starting price.
+          </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">

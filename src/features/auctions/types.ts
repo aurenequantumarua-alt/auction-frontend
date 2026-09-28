@@ -39,6 +39,7 @@ export interface AuctionListItem {
   size: string;
   basePrice: string;
   minIncrement: string;
+  buyNowPrice: string | null;
   startsAt: string;
   endsAt: string;
   status: AuctionStatus;

@@ -10,11 +10,11 @@ export const Footer = () => (
         </p>
       </div>
       <div className="flex flex-wrap gap-6 text-sm text-muted">
-        <Link to="/browse" className="hover:text-ink">Browse</Link>
-        <Link to="/sell" className="hover:text-ink">Sell</Link>
-        <a className="hover:text-ink" href="#">About</a>
-        <a className="hover:text-ink" href="#">Terms</a>
-        <a className="hover:text-ink" href="#">Privacy</a>
+        <Link to="/browse" className="hover:text-ink transition-colors">Browse</Link>
+        <Link to="/sell" className="hover:text-ink transition-colors">Sell</Link>
+        <Link to="/about" className="hover:text-ink transition-colors">About</Link>
+        <Link to="/terms" className="hover:text-ink transition-colors">Terms</Link>
+        <Link to="/privacy" className="hover:text-ink transition-colors">Privacy</Link>
       </div>
     </div>
     <div className="container mt-8 text-xs text-ink-300">

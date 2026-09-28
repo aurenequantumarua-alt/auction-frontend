@@ -113,6 +113,11 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
               {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'} · Size {auction.size}
             </p>
           )}
+          {isLive && auction.buyNowPrice && (
+            <p className="text-xs font-medium text-accent">
+              ⚡ Buy Now {formatPrice(auction.buyNowPrice, true)}
+            </p>
+          )}
         </div>
       </Link>
     </motion.article>

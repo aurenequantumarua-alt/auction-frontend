@@ -5,7 +5,25 @@ import { useAuctions } from '@/features/auctions/hooks';
 import { AuctionCard, AuctionCardSkeleton } from '@/features/auctions/components/AuctionCard';
 
 export const LandingPage = () => {
-  const { data, isLoading } = useAuctions({ status: 'LIVE', sort: 'ending_soon', pageSize: 8 });
+  const { data: newestData, isLoading: isNewestLoading } = useAuctions({
+    status: 'LIVE',
+    sort: 'newest',
+    pageSize: 8,
+  });
+
+  const { data: endingSoonData, isLoading: isEndingSoonLoading } = useAuctions({
+    status: 'LIVE',
+    sort: 'ending_soon',
+    pageSize: 8,
+  });
+
+  const newestAuctions = (newestData?.items ?? []).filter(
+    (a) => a.status === 'LIVE' && new Date(a.endsAt).getTime() > Date.now(),
+  );
+
+  const endingSoonAuctions = (endingSoonData?.items ?? []).filter(
+    (a) => a.status === 'LIVE' && new Date(a.endsAt).getTime() > Date.now(),
+  );
 
   return (
     <>
@@ -22,7 +40,7 @@ export const LandingPage = () => {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link to="/browse">Browse live auctions <ArrowRight className="h-4 w-4" /></Link>
+                <Link to="/browse?sort=newest">Browse live auctions <ArrowRight className="h-4 w-4" /></Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
                 <Link to="/sell">List a piece</Link>
@@ -46,20 +64,52 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      <section className="container py-20">
+      {/* 1. First: Newest drops */}
+      <section className="container py-16 lg:py-20">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="kicker">Just dropped</p>
+            <h2 className="display-serif mt-2 text-display-md font-semibold">Newest listings</h2>
+          </div>
+          <Link to="/browse?sort=newest" className="text-sm text-muted hover:text-ink">
+            View all newest →
+          </Link>
+        </div>
+        <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          {isNewestLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <AuctionCardSkeleton key={i} />)
+          ) : newestAuctions.length > 0 ? (
+            newestAuctions.map((a) => <AuctionCard key={a.id} auction={a} />)
+          ) : (
+            <div className="col-span-full rounded-xl border border-line bg-canvas p-12 text-center">
+              <p className="font-display text-lg font-medium text-ink">No live auctions right now</p>
+              <p className="mt-2 text-sm text-muted">Check back soon for new drops, or list your piece.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 2. Then: Ending soonest */}
+      <section className="container border-t border-line py-16 lg:py-20">
         <div className="flex items-end justify-between">
           <div>
             <p className="kicker">Live now</p>
             <h2 className="display-serif mt-2 text-display-md font-semibold">Ending soonest</h2>
           </div>
-          <Link to="/browse" className="text-sm text-muted hover:text-ink">
-            View all →
+          <Link to="/browse?sort=ending_soon" className="text-sm text-muted hover:text-ink">
+            View all ending soon →
           </Link>
         </div>
         <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => <AuctionCardSkeleton key={i} />)
-            : data?.items.map((a) => <AuctionCard key={a.id} auction={a} />)}
+          {isEndingSoonLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <AuctionCardSkeleton key={i} />)
+          ) : endingSoonAuctions.length > 0 ? (
+            endingSoonAuctions.map((a) => <AuctionCard key={a.id} auction={a} />)
+          ) : (
+            <div className="col-span-full rounded-xl border border-line bg-canvas p-12 text-center">
+              <p className="font-display text-lg font-medium text-ink">No auctions ending soon</p>
+            </div>
+          )}
         </div>
       </section>
 

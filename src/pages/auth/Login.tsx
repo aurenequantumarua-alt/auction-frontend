@@ -112,7 +112,15 @@ export const LoginPage = () => {
           <FieldError message={errors.email?.message} />
         </div>
         <div>
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link
+              to="/forgot-password"
+              className="text-xs text-muted hover:text-ink transition-colors font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Input id="password" type="password" autoComplete="current-password" {...register('password')} invalid={!!errors.password} className="mt-1.5" />
           <FieldError message={errors.password?.message} />
         </div>

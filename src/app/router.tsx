@@ -6,6 +6,7 @@ import { BrowsePage } from '@/pages/Browse';
 import { AuctionDetailPage } from '@/pages/AuctionDetail';
 import { LoginPage } from '@/pages/auth/Login';
 import { SignupPage } from '@/pages/auth/Signup';
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPassword';
 import { SellPage } from '@/pages/Sell';
 import { CreateAuctionPage } from '@/pages/seller/CreateAuction';
 import { WatchlistPage } from '@/pages/Watchlist';
@@ -19,6 +20,9 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AdminRoute } from '@/components/common/AdminRoute';
 import { AdminPage } from '@/pages/admin/AdminPage';
 import { AdminReportsPage } from '@/pages/admin/AdminReportsPage';
+import { AboutPage } from '@/pages/About';
+import { TermsPage } from '@/pages/Terms';
+import { PrivacyPage } from '@/pages/Privacy';
 
 const router = createBrowserRouter([
   {
@@ -27,6 +31,9 @@ const router = createBrowserRouter([
       { path: '/', element: <LandingPage /> },
       { path: '/browse', element: <BrowsePage /> },
       { path: '/auctions/:id', element: <AuctionDetailPage /> },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/terms', element: <TermsPage /> },
+      { path: '/privacy', element: <PrivacyPage /> },
       { path: '/sell', element: <SellPage /> },
       {
         path: '/sell/new',
@@ -116,6 +123,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
     ],
   },
 ]);

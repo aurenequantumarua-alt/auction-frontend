@@ -5,6 +5,7 @@ import { useAuction, useAuctionBids, useEndAuctionNow, useCancelAuction } from '
 import { AuctionGallery } from '@/features/auctions/components/AuctionGallery';
 import { BidPanel } from '@/features/auctions/components/BidPanel';
 import { BidHistory } from '@/features/auctions/components/BidHistory';
+import { AuctionInquiries } from '@/features/auctions/components/AuctionInquiries';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useAuctionSubscription } from '@/app/useRealtimeBridge';
@@ -163,6 +164,9 @@ export const AuctionDetailPage = () => {
               <BidHistory bids={bidsData?.items ?? auction.bids} />
             </div>
           </div>
+
+          {/* Q&A Section */}
+          <AuctionInquiries auctionId={auction.id} sellerId={auction.seller.id} />
         </div>
 
         <div className="lg:col-span-5">

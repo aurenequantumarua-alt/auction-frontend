@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Heart } from 'lucide-react';
+import { Heart, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Countdown } from '@/components/common/Countdown';
@@ -11,7 +11,7 @@ import { extractApiError } from '@/lib/api';
 import { ConnectBankDialog, isBankAccountRequired } from '@/components/common/ConnectBankDialog';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useAuthStore } from '@/features/auth/authStore';
-import { usePlaceBid, useWatchToggle } from '../hooks';
+import { usePlaceBid, useWatchToggle, useBuyNow } from '../hooks';
 import type { AuctionDetail } from '../types';
 import { ReportDialog } from './ReportDialog';
 
@@ -24,6 +24,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
   const navigate = useNavigate();
   const placeBid = usePlaceBid(auction.id);
   const watchToggle = useWatchToggle(auction.id);
+  const buyNow = useBuyNow(auction.id);
   
   const effectiveStatus = useMemo(() => {
     if (auction.status === 'LIVE' && new Date(auction.endsAt).getTime() <= Date.now()) {
@@ -55,6 +56,14 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
   const isOwner = user?.id === auction.seller.id;
   const ended = !isLive && !isUpcoming;
 
+  // Buy It Now is available when the auction is live, has a buy-now price, and
+  // the current bid hasn't already met or exceeded the buy-now price.
+  const hasBuyNow =
+    isLive &&
+    !isOwner &&
+    auction.buyNowPrice &&
+    Number(auction.buyNowPrice) > Number(currentAmount);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -68,6 +77,30 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
     try {
       await placeBid.mutateAsync(amount);
       toast.success(`Bid placed at ${formatPrice(amount, true)}`);
+    } catch (err) {
+      if (isBankAccountRequired(err)) {
+        setBankGateOpen(true);
+        return;
+      }
+      toast.error(extractApiError(err).message);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: `/auctions/${auction.id}` } } });
+      return;
+    }
+    if (
+      !window.confirm(
+        `Buy this item now for ${formatPrice(auction.buyNowPrice!, true)}? The auction will end immediately and you'll proceed to payment.`,
+      )
+    )
+      return;
+
+    try {
+      await buyNow.mutateAsync();
+      toast.success('You won! Proceed to payment.');
     } catch (err) {
       if (isBankAccountRequired(err)) {
         setBankGateOpen(true);
@@ -101,6 +134,15 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
         {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'}
         {auction.currentBid && ' · You can still claim it'}
       </p>
+
+      {/* ── Buy It Now banner ────────────────────────────────── */}
+      {auction.buyNowPrice && isLive && !isOwner && (
+        <div className="mt-3 flex items-center gap-2 rounded bg-accent/5 px-3 py-2 text-sm">
+          <Zap className="h-3.5 w-3.5 text-accent" />
+          <span className="text-muted">Buy It Now:</span>
+          <span className="font-semibold text-accent tabular">{formatPrice(auction.buyNowPrice, true)}</span>
+        </div>
+      )}
 
       <div className="mt-5 flex items-center justify-between border-y border-line py-3 text-sm">
         <span className="text-muted">
@@ -153,6 +195,33 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
           >
             {placeBid.isPending ? 'Placing…' : `Place bid · ${formatPrice(amount || minNext, true)}`}
           </Button>
+
+          {/* ── Buy It Now ─────────────────────────────────────── */}
+          {hasBuyNow && (
+            <div className="pt-1">
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-kicker text-muted">
+                <span className="h-px flex-1 bg-line" />
+                or
+                <span className="h-px flex-1 bg-line" />
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="mt-3 w-full gap-2 border-accent/30 bg-accent/5 text-accent hover:bg-accent/10"
+                disabled={buyNow.isPending}
+                onClick={handleBuyNow}
+              >
+                <Zap className="h-4 w-4" />
+                {buyNow.isPending
+                  ? 'Processing…'
+                  : `Buy It Now · ${formatPrice(auction.buyNowPrice!, true)}`}
+              </Button>
+              <p className="mt-1.5 text-center text-[11px] text-muted">
+                Skip the bidding — purchase immediately at the seller&apos;s fixed price.
+              </p>
+            </div>
+          )}
         </form>
       )}
 

@@ -13,8 +13,8 @@ const CONDITIONS = [
 ] as const;
 
 const SORTS = [
-  { value: 'ending_soon', label: 'Ending soon' },
   { value: 'newest', label: 'Newest' },
+  { value: 'ending_soon', label: 'Ending soon' },
   { value: 'highest_bid', label: 'Highest bid' },
   { value: 'most_bids', label: 'Most bids' },
 ] as const;
@@ -93,7 +93,7 @@ export const AuctionFilters = ({ value, onChange }: AuctionFiltersProps) => {
         <div className="ml-auto flex items-center gap-3">
           <SlidersHorizontal className="h-4 w-4 text-muted" />
           <Select
-            value={value.sort ?? 'ending_soon'}
+            value={value.sort ?? 'newest'}
             onValueChange={(v) => update({ sort: v as AuctionListQuery['sort'] })}
           >
             <SelectTrigger className="h-10 w-[170px]">
