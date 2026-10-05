@@ -22,14 +22,18 @@ const refreshAccessToken = async (): Promise<string | null> => {
   if (refreshing) return refreshing;
   refreshing = (async () => {
     try {
+      const rt = useAuthStore.getState().refreshToken;
       const res = await axios.post(
         `${API_BASE}/auth/refresh`,
-        {},
+        // Send refresh token in the body as fallback for browsers that
+        // block cross-origin cookies (Chrome 118+ third-party cookie phase-out).
+        { refreshToken: rt ?? undefined },
         { withCredentials: true },
       );
-      const data = res.data as { accessToken: string; user: unknown };
+      const data = res.data as { accessToken: string; refreshToken?: string; user: unknown };
       useAuthStore.getState().setSession({
         accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
         user: data.user as never,
       });
       return data.accessToken;

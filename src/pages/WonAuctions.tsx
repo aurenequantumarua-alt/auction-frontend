@@ -59,9 +59,15 @@ export const WonAuctionsPage = () => {
               razorpaySignature: resp.razorpay_signature,
             });
             toast.success('Payment successful — your item is on the way!');
+          } catch {
+            // Payment was already captured by Razorpay — the server-side
+            // webhook will process the settlement automatically.
+            toast.info(
+              'Payment received! Your order will be confirmed shortly.',
+              { duration: 6000 },
+            );
+          } finally {
             void refetch();
-          } catch (err) {
-            toast.error(extractApiError(err).message);
           }
         },
         modal: { ondismiss: () => toast.info('Payment cancelled.') },

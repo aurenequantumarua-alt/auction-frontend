@@ -38,7 +38,7 @@ export const SignupPage = () => {
         toast.success('Verification email sent — check your inbox');
         return;
       }
-      setSession({ user: result.user, accessToken: result.accessToken });
+      setSession({ user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
       refreshSocketAuth();
       toast.success('Account created.');
       navigate('/', { replace: true });
@@ -53,7 +53,7 @@ export const SignupPage = () => {
     setIsVerifying(true);
     try {
       const result = await authApi.verifyEmail({ email: unverifiedEmail, code: otp });
-      setSession({ user: result.user, accessToken: result.accessToken });
+      setSession({ user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
       refreshSocketAuth();
       toast.success('Email verified! Account created.');
       navigate('/', { replace: true });

@@ -80,7 +80,7 @@ export const ForgotPasswordPage = () => {
         newPassword: data.password,
       });
 
-      setSession({ user: res.user, accessToken: res.accessToken });
+      setSession({ user: res.user, accessToken: res.accessToken, refreshToken: res.refreshToken });
       refreshSocketAuth();
       toast.success('Password updated successfully! Welcome back.');
       navigate('/', { replace: true });

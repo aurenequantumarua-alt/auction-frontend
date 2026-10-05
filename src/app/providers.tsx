@@ -26,7 +26,7 @@ const SessionBootstrap = ({ children }: { children: ReactNode }) => {
     (async () => {
       const result = await authApi.refresh();
       if (result) {
-        setSession({ user: result.user, accessToken: result.accessToken });
+        setSession({ user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken });
       } else {
         clear();
       }

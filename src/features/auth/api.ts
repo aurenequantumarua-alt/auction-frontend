@@ -5,6 +5,7 @@ import type { AuthUser } from './authStore';
 interface AuthResponse {
   user: AuthUser;
   accessToken: string;
+  refreshToken?: string;
   expiresAt: string;
 }
 
@@ -40,9 +41,11 @@ export const authApi = {
 
   refresh: async (): Promise<AuthResponse | null> => {
     try {
+      const { useAuthStore } = await import('./authStore');
+      const rt = useAuthStore.getState().refreshToken;
       const { data } = await axios.post<AuthResponse>(
         `${API_BASE}/auth/refresh`,
-        {},
+        { refreshToken: rt ?? undefined },
         { withCredentials: true },
       );
       return data;

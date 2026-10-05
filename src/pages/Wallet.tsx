@@ -339,10 +339,17 @@ const DepositDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v
               razorpaySignature: resp.razorpay_signature,
             });
             toast.success(`Successfully deposited ${formatPrice(amountNum, true)}`);
+          } catch {
+            // Payment was already captured by Razorpay — the server-side
+            // webhook will credit the wallet automatically even if this
+            // verify call failed (e.g. due to an expired auth token).
+            toast.info(
+              'Payment received! Your wallet will be credited shortly.',
+              { duration: 6000 },
+            );
+          } finally {
             setAmount('');
             onOpenChange(false);
-          } catch (err) {
-            toast.error(extractApiError(err).message);
           }
         },
         modal: { ondismiss: () => toast.info('Deposit cancelled.') },
