@@ -24,6 +24,7 @@ export const AuctionGallery = ({ images, alt }: AuctionGalleryProps) => {
           alt={alt}
           className="h-full w-full object-cover"
           loading="eager"
+          referrerPolicy="no-referrer"
         />
       </div>
       {sorted.length > 1 && (
@@ -38,7 +39,7 @@ export const AuctionGallery = ({ images, alt }: AuctionGalleryProps) => {
               )}
               aria-label={`View image ${idx + 1}`}
             >
-              <img src={img.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <img src={img.url} alt="" className="h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
             </button>
           ))}
         </div>

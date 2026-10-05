@@ -57,6 +57,7 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
                 isEnded && 'opacity-70 grayscale-[30%]',
               )}
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
           )}
           <div className="absolute left-3 top-3 flex gap-2">

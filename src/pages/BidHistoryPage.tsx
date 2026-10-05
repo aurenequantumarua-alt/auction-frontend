@@ -40,7 +40,7 @@ export const BidHistoryPage = () => {
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="aspect-square h-16 w-16 flex-none overflow-hidden rounded bg-ink-50">
                     {b.auction.images[0] && (
-                      <img src={b.auction.images[0].url} alt="" className="h-full w-full object-cover" />
+                      <img src={b.auction.images[0].url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                     )}
                   </div>
                   <div className="min-w-0">

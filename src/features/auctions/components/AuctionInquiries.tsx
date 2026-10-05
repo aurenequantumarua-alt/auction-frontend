@@ -170,6 +170,7 @@ const InquiryCard = ({
                   src={inquiry.imageUrl}
                   alt="Verification"
                   className="mt-2 max-h-48 rounded border border-line object-contain"
+                  referrerPolicy="no-referrer"
                 />
               )}
             </div>

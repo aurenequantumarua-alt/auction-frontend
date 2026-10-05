@@ -100,7 +100,7 @@ export const WonAuctionsPage = () => {
             return (
               <div key={w.id} className="rounded-lg border border-line bg-canvas p-5 sm:flex sm:items-center sm:gap-5">
                 <div className="aspect-square h-24 w-24 flex-none overflow-hidden rounded bg-ink-50">
-                  {w.auction.images[0] && <img src={w.auction.images[0].url} alt="" className="h-full w-full object-cover" />}
+                  {w.auction.images[0] && <img src={w.auction.images[0].url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />}
                 </div>
                 <div className="mt-3 flex-1 sm:mt-0">
                   <p className="kicker">{w.auction.brand}</p>

@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Upload, X } from 'lucide-react';
+import { Link2, X } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Label, FieldError } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +12,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateAuction } from '@/features/auctions/hooks';
 import { ConnectBankDialog, isBankAccountRequired } from '@/components/common/ConnectBankDialog';
 import { extractApiError } from '@/lib/api';
-import { uploadImage } from '@/lib/uploadImage';
+
+/**
+ * Extracts a Google Drive file ID from various link formats:
+ *  - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+ *  - https://drive.google.com/open?id=FILE_ID
+ *  - https://drive.google.com/uc?id=FILE_ID&export=view
+ * Returns null if the link isn't a recognised Drive URL.
+ */
+const extractDriveFileId = (url: string): string | null => {
+  try {
+    const u = new URL(url.trim());
+    if (!u.hostname.endsWith('drive.google.com') && !u.hostname.endsWith('docs.google.com')) {
+      return null;
+    }
+    // /file/d/FILE_ID/...
+    const fileMatch = u.pathname.match(/\/file\/d\/([^/]+)/);
+    if (fileMatch) return fileMatch[1] ?? null;
+    // ?id=FILE_ID (open or uc links)
+    const idParam = u.searchParams.get('id');
+    if (idParam) return idParam;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+/** Convert a Google Drive file ID to a direct-embeddable image URL. */
+const driveDirectUrl = (fileId: string): string =>
+  `https://lh3.googleusercontent.com/d/${fileId}`;
 
 const Schema = z.object({
   title: z.string().min(3).max(140),
@@ -41,8 +69,8 @@ const CONDITIONS = [
 export const CreateAuctionPage = () => {
   const navigate = useNavigate();
   const create = useCreateAuction();
-  const [images, setImages] = useState<{ url: string; previewUrl?: string; isCover: boolean }[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState<{ url: string; isCover: boolean }[]>([]);
+  const [driveLink, setDriveLink] = useState('');
   const [bankGateOpen, setBankGateOpen] = useState(false);
 
   // datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time (no timezone, no seconds).
@@ -65,21 +93,27 @@ export const CreateAuctionPage = () => {
     },
   });
 
-  const handleFile = async (file: File) => {
-    setUploading(true);
-    const localPreview = URL.createObjectURL(file);
-    try {
-      const url = await uploadImage(file);
-      setImages((prev) => [
-        ...prev,
-        { url, previewUrl: localPreview, isCover: prev.length === 0 },
-      ]);
-      toast.success('Image uploaded');
-    } catch (err) {
-      toast.error(extractApiError(err).message);
-    } finally {
-      setUploading(false);
+  const handleAddDriveLink = () => {
+    const link = driveLink.trim();
+    if (!link) return;
+
+    const fileId = extractDriveFileId(link);
+    if (!fileId) {
+      toast.error('Invalid Google Drive link. Please paste a valid sharing link.');
+      return;
     }
+
+    const directUrl = driveDirectUrl(fileId);
+
+    // Prevent duplicates
+    if (images.some((img) => img.url === directUrl)) {
+      toast.error('This image has already been added.');
+      return;
+    }
+
+    setImages((prev) => [...prev, { url: directUrl, isCover: prev.length === 0 }]);
+    setDriveLink('');
+    toast.success('Image added');
   };
 
   const onSubmit = async (data: FormData, publish: boolean) => {
@@ -229,14 +263,48 @@ export const CreateAuctionPage = () => {
 
         <div>
           <Label>Images</Label>
-          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <p className="mt-1 text-xs text-muted">
+            Paste a Google Drive sharing link. Make sure the file is set to <strong>"Anyone with the link"</strong> can view.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <Input
+              id="driveLink"
+              value={driveLink}
+              onChange={(e) => setDriveLink(e.target.value)}
+              className="flex-1"
+              placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddDriveLink();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleAddDriveLink}
+              disabled={!driveLink.trim()}
+            >
+              <Link2 className="mr-1.5 h-4 w-4" />
+              Add
+            </Button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {images.map((img, idx) => (
               <div key={idx} className="group relative aspect-square overflow-hidden rounded border border-line">
-                <img src={img.previewUrl || img.url} alt="" className="h-full w-full object-cover" />
+                <img src={img.url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                 <button
                   type="button"
                   className="absolute right-1.5 top-1.5 rounded bg-canvas/95 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                  onClick={() => setImages((prev) => {
+                    const next = prev.filter((_, i) => i !== idx);
+                    // If we removed the cover image, make the first remaining image the cover
+                    if (img.isCover && next.length > 0 && next[0]) {
+                      next[0] = { url: next[0].url, isCover: true };
+                    }
+                    return next;
+                  })}
                   aria-label="Remove image"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -248,23 +316,10 @@ export const CreateAuctionPage = () => {
                 )}
               </div>
             ))}
-            {images.length < 10 && (
-              <label className="flex aspect-square cursor-pointer items-center justify-center rounded border border-dashed border-line bg-ink-50/40 text-sm text-muted hover:border-ink hover:bg-ink-50">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handleFile(file);
-                  }}
-                  disabled={uploading}
-                />
-                <Upload className="h-5 w-5" />
-              </label>
-            )}
           </div>
-          {uploading && <p className="mt-2 text-xs text-muted">Uploading…</p>}
+          {images.length >= 10 && (
+            <p className="mt-2 text-xs text-muted">Maximum 10 images reached.</p>
+          )}
         </div>
 
         <div className="flex gap-3 border-t border-line pt-8">
@@ -292,3 +347,4 @@ export const CreateAuctionPage = () => {
     </div>
   );
 };
+
