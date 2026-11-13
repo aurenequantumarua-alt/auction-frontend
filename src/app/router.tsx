@@ -22,6 +22,7 @@ import { AdminPage } from '@/pages/admin/AdminPage';
 import { AdminReportsPage } from '@/pages/admin/AdminReportsPage';
 import { AdminDisputesPage } from '@/pages/admin/AdminDisputesPage';
 import { AdminPayoutsPage } from '@/pages/admin/AdminPayoutsPage';
+import { AdminShillAlertsPage } from '@/pages/admin/AdminShillAlertsPage';
 import { AboutPage } from '@/pages/About';
 import { TermsPage } from '@/pages/Terms';
 import { PrivacyPage } from '@/pages/Privacy';
@@ -130,6 +131,14 @@ const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <AdminPayoutsPage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: '/admin/shill-alerts',
+        element: (
+          <AdminRoute>
+            <AdminShillAlertsPage />
           </AdminRoute>
         ),
       },

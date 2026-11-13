@@ -1,5 +1,17 @@
 import { api } from '@/lib/api';
 
+export interface ShillAlert {
+  auctionId: string;
+  auctionTitle: string;
+  auctionStatus: string;
+  seller: { name: string; email: string } | null;
+  sharedIp: string;
+  bidders: { id: string; name: string; email: string }[];
+  bidCount: number;
+  sellerIsBidder: boolean;
+  severity: 'CRITICAL' | 'WARNING';
+}
+
 export interface PlatformProfitSummary {
   totalProfitFormatted: string;
   totalProfit: number;
@@ -80,5 +92,9 @@ export const adminApi = {
       reason,
     });
     return data.item;
+  },
+  getShillAlerts: async () => {
+    const { data } = await api.get<{ alerts: ShillAlert[]; count: number }>('/admin/shill-alerts');
+    return data;
   },
 };

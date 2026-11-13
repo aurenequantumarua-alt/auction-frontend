@@ -110,6 +110,12 @@ export const AdminPage = () => {
             Disputes
           </Link>
           <Link
+            to="/admin/shill-alerts"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink-50"
+          >
+            Shill Detection
+          </Link>
+          <Link
             to="/admin/reports"
             className="inline-flex items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink-50"
           >
