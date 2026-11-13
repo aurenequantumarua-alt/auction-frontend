@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { api, extractApiError } from '@/lib/api';
 import { loadRazorpay } from '@/lib/razorpay';
 import { useAuthStore } from '@/features/auth/authStore';
+import { sanitize } from '@/lib/sanitize';
 import { DisputeModal } from '@/features/auctions/components/DisputeModal';
 
 type CheckoutResponse =
@@ -184,7 +185,7 @@ export const WonAuctionsPage = () => {
                   <div className="mt-3 flex-1 sm:mt-0">
                     <p className="kicker">{w.auction.brand}</p>
                     <Link to={`/auctions/${w.auction.id}`} className="block font-display text-lg font-medium hover:underline">
-                      {w.auction.title}
+                      {sanitize(w.auction.title)}
                     </Link>
                     <p className="mt-1 text-sm text-muted">
                       Winning bid <span className="font-medium text-ink">{formatPrice(w.amount, true)}</span>

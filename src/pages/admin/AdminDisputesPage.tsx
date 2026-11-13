@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { api, extractApiError } from '@/lib/api';
 import { formatDateTime, formatPrice, formatRelative } from '@/lib/format';
+import { sanitize } from '@/lib/sanitize';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface DisputeItem {
@@ -173,7 +174,7 @@ export const AdminDisputesPage = () => {
                         to={`/auctions/${d.settlement.auction.id}`}
                         className="inline-flex items-center gap-1.5 font-display text-base font-medium hover:underline"
                       >
-                        {d.settlement.auction.title}
+                        {sanitize(d.settlement.auction.title)}
                         <ExternalLink className="h-3.5 w-3.5 text-muted" />
                       </Link>
                       <p className="text-xs text-muted">{d.settlement.auction.brand}</p>
@@ -193,12 +194,12 @@ export const AdminDisputesPage = () => {
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
                   <div className="rounded-md bg-ink-50/50 p-3">
                     <p className="text-xs font-medium text-muted">Buyer</p>
-                    <p className="text-sm font-medium">{d.buyer.name}</p>
+                    <p className="text-sm font-medium">{sanitize(d.buyer.name)}</p>
                     <p className="text-xs text-muted">{d.buyer.email}</p>
                   </div>
                   <div className="rounded-md bg-ink-50/50 p-3">
                     <p className="text-xs font-medium text-muted">Seller</p>
-                    <p className="text-sm font-medium">{d.settlement.auction.seller.name}</p>
+                    <p className="text-sm font-medium">{sanitize(d.settlement.auction.seller.name)}</p>
                     <p className="text-xs text-muted">{d.settlement.auction.seller.email}</p>
                   </div>
                   <div className="rounded-md bg-ink-50/50 p-3">
@@ -231,7 +232,7 @@ export const AdminDisputesPage = () => {
                       · Submitted {formatRelative(d.createdAt)}
                     </span>
                   </p>
-                  <p className="mt-1 whitespace-pre-line text-sm text-ink">{d.description}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-ink">{sanitize(d.description)}</p>
                 </div>
 
                 {d.proofUrls.length > 0 ? (

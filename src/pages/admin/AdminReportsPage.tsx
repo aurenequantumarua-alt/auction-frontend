@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '@/features/admin/api';
+import { sanitize } from '@/lib/sanitize';
 import { Filter, Check, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -132,11 +133,11 @@ export const AdminReportsPage = () => {
                     </div>
                     
                     <p className="text-sm text-ink-600 border-l-2 border-line pl-3 italic">
-                      "{report.details}"
+                      "{sanitize(report.details)}"
                     </p>
                     
                     <div className="text-xs text-muted flex items-center gap-4">
-                      <span>Reported by: <span className="font-medium text-ink">{report.reporter.name}</span> ({report.reporter.email})</span>
+                      <span>Reported by: <span className="font-medium text-ink">{sanitize(report.reporter.name)}</span> ({report.reporter.email})</span>
                     </div>
                   </div>
                   
@@ -145,7 +146,7 @@ export const AdminReportsPage = () => {
                     <p className="kicker mb-2">Reported Auction</p>
                     <Link to={`/auctions/${report.auction.id}`} className="block group">
                       <h4 className="font-medium text-sm text-ink group-hover:text-accent group-hover:underline underline-offset-2 line-clamp-1">
-                        {report.auction.title}
+                        {sanitize(report.auction.title)}
                       </h4>
                       <p className="text-xs text-muted mt-1 font-mono">{report.auction.id}</p>
                     </Link>
@@ -153,7 +154,7 @@ export const AdminReportsPage = () => {
                       <span className="px-1.5 py-0.5 rounded bg-ink/10 font-medium">
                         {report.auction.status}
                       </span>
-                      <span className="text-muted">Seller: {report.auction.seller.name}</span>
+                      <span className="text-muted">Seller: {sanitize(report.auction.seller.name)}</span>
                     </div>
                   </div>
                 </div>

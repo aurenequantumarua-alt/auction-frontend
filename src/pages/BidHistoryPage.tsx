@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useMyBids } from '@/features/auctions/hooks';
 import { formatDateTime, formatPrice } from '@/lib/format';
+import { sanitize } from '@/lib/sanitize';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -46,7 +47,7 @@ export const BidHistoryPage = () => {
                   <div className="min-w-0">
                     <p className="kicker">{b.auction.brand}</p>
                     <Link to={`/auctions/${b.auction.id}`} className="block truncate font-display text-base font-medium hover:underline">
-                      {b.auction.title}
+                      {sanitize(b.auction.title)}
                     </Link>
                     <p className="text-xs text-muted">{formatDateTime(b.placedAt)}</p>
                   </div>

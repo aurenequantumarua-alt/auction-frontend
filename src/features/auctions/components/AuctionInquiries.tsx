@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
+import { sanitize } from '@/lib/sanitize';
 import { formatRelative } from '@/lib/format';
 import { extractApiError } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/authStore';
@@ -100,7 +101,7 @@ const InquiryCard = ({
           {inquiry.asker.avatarUrl ? (
             <img
               src={inquiry.asker.avatarUrl}
-              alt={inquiry.asker.name}
+              alt={sanitize(inquiry.asker.name)}
               className="h-7 w-7 shrink-0 rounded-full object-cover"
             />
           ) : (
@@ -112,7 +113,7 @@ const InquiryCard = ({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-ink-600">
-                {inquiry.asker.name}
+                {sanitize(inquiry.asker.name)}
               </span>
               <span className="text-[10px] text-muted">
                 {formatRelative(inquiry.createdAt)}
@@ -124,7 +125,7 @@ const InquiryCard = ({
               )}
             </div>
             <p className="mt-1 text-sm leading-relaxed text-ink">
-              {inquiry.question}
+              {sanitize(inquiry.question)}
             </p>
           </div>
 
@@ -163,7 +164,7 @@ const InquiryCard = ({
                 )}
               </div>
               <p className="mt-1 text-sm leading-relaxed text-ink-700">
-                {inquiry.answer}
+                {sanitize(inquiry.answer)}
               </p>
               {inquiry.imageUrl && (
                 <img

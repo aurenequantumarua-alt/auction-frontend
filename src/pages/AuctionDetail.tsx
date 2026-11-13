@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuctionSubscription } from '@/app/useRealtimeBridge';
 import { useAuthStore } from '@/features/auth/authStore';
 import { extractApiError } from '@/lib/api';
+import { sanitize } from '@/lib/sanitize';
 import type { AuctionDetail } from '@/features/auctions/types';
 
 const conditionLabel: Record<string, string> = {
@@ -118,12 +119,12 @@ export const AuctionDetailPage = () => {
 
       <div className="mt-6 grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <AuctionGallery images={auction.images} alt={`${auction.brand} ${auction.title}`} />
+          <AuctionGallery images={auction.images} alt={`${auction.brand} ${sanitize(auction.title)}`} />
 
           <div className="mt-12">
             <p className="kicker">Description</p>
             <p className="mt-3 whitespace-pre-line text-base leading-relaxed text-ink-700">
-              {auction.description}
+              {sanitize(auction.description)}
             </p>
           </div>
 
@@ -172,10 +173,10 @@ export const AuctionDetailPage = () => {
         <div className="lg:col-span-5">
           <p className="kicker">{auction.brand}</p>
           <h1 className="display-serif mt-2 text-display-md font-semibold leading-tight text-ink">
-            {auction.title}
+            {sanitize(auction.title)}
           </h1>
           <div className="mt-3 flex items-center gap-3 text-sm text-muted">
-            <span>Listed by {auction.seller.name}</span>
+            <span>Listed by {sanitize(auction.seller.name)}</span>
           </div>
           <div className="mt-6">
             <BidPanel auction={auction} />

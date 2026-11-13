@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/format';
 import { Countdown } from '@/components/common/Countdown';
 import { Badge, StatusDot } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
+import { sanitize } from '@/lib/sanitize';
 
 interface AuctionCardProps {
   auction: AuctionListItem;
@@ -45,13 +46,13 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
       <Link
         to={`/auctions/${auction.id}`}
         className="block focus:outline-none"
-        aria-label={`${auction.brand} ${auction.title}`}
+        aria-label={`${auction.brand} ${sanitize(auction.title)}`}
       >
         <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-ink-50">
           {cover && (
             <img
               src={cover.url}
-              alt={`${auction.brand} ${auction.title}`}
+              alt={`${auction.brand} ${sanitize(auction.title)}`}
               className={cn(
                 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]',
                 isEnded && 'opacity-70 grayscale-[30%]',
@@ -81,7 +82,7 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
         <div className="mt-4 space-y-1.5">
           <p className="kicker">{auction.brand}</p>
           <h3 className="font-display text-lg font-medium leading-tight text-ink line-clamp-2">
-            {auction.title}
+            {sanitize(auction.title)}
           </h3>
           <div className="flex items-baseline justify-between pt-1.5">
             <div>
