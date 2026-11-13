@@ -58,10 +58,31 @@ export interface AuctionDetail extends AuctionListItem {
   isWatched: boolean;
   settlement?: {
     id: string;
-    status: 'AWAITING_PAYMENT' | 'PAID' | 'EXHAUSTED';
+    status: 'AWAITING_PAYMENT' | 'ESCROW_HOLD' | 'DELIVERED_PENDING' | 'DISPUTED' | 'COMPLETED' | 'REFUNDED' | 'EXHAUSTED';
     paymentDeadline: string;
     currentWinnerBidId: string | null;
+    currentWinnerBid?: {
+      id: string;
+      bidderId: string;
+      amount: string;
+    } | null;
     attemptCount: number;
+    shippedAt: string | null;
+    trackingNumber: string | null;
+    courierName: string | null;
+    deliveredAt: string | null;
+    inspectionDeadline: string | null;
+    shippingDeadline: string | null;
+    releasedAt: string | null;
+    dispute?: {
+      id: string;
+      reason: string;
+      description: string;
+      proofUrls: string[];
+      status: 'OPEN' | 'RESOLVED_REFUND' | 'RESOLVED_REJECTED';
+      adminNotes: string | null;
+      createdAt: string;
+    } | null;
   } | null;
 }
 

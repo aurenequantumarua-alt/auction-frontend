@@ -4,6 +4,8 @@ import { useAuthStore } from '@/features/auth/authStore';
 import { formatRelative } from '@/lib/format';
 import { Link } from 'react-router-dom';
 
+import { useMyWins } from '@/features/auctions/hooks';
+
 const notifTitle: Record<string, string> = {
   OUTBID: 'You’ve been outbid',
   WON: 'You won an auction',
@@ -21,7 +23,13 @@ const notifTitle: Record<string, string> = {
 export const ProfilePage = () => {
   const user = useAuthStore((s) => s.user);
   const { data, isLoading } = useNotifications();
+  const { data: winsData } = useMyWins();
   const markAll = useMarkAllRead();
+
+  const unpaidWins =
+    winsData?.items.filter(
+      (w) => w.auction.settlement?.status === 'AWAITING_PAYMENT',
+    ) ?? [];
 
   return (
     <div className="container max-w-3xl py-12">
@@ -36,6 +44,24 @@ export const ProfilePage = () => {
         <Button asChild variant="secondary"><Link to="/me/wins">Won auctions</Link></Button>
         <Button asChild variant="secondary"><Link to="/me/listings">My listings</Link></Button>
       </div>
+
+      {unpaidWins.length > 0 && (
+        <div className="mt-8 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="font-semibold text-amber-800 dark:text-amber-400">
+                Action Required: {unpaidWins.length === 1 ? 'Auction' : `${unpaidWins.length} auctions`} won awaiting payment!
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                Complete payment to lock funds safely in Escrow so the seller can ship your item.
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link to="/me/wins">Proceed to Payment ({unpaidWins.length})</Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-12 flex items-center justify-between">
         <h2 className="font-display text-2xl font-semibold">Notifications</h2>
@@ -58,6 +84,7 @@ export const ProfilePage = () => {
             const preview =
               (n.payload?.question as string | undefined) ??
               (n.payload?.answerPreview as string | undefined);
+            const isPaymentDue = n.type === 'WON' || n.type === 'PAYMENT_DUE';
 
             const content = (
               <>
@@ -91,6 +118,11 @@ export const ProfilePage = () => {
                     content
                   )}
                 </div>
+                {isPaymentDue && auctionId && (
+                  <Button asChild size="sm" className="ml-2 flex-none">
+                    <Link to={`/auctions/${auctionId}`}>Pay Now</Link>
+                  </Button>
+                )}
               </li>
             );
           })

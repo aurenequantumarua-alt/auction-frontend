@@ -29,8 +29,8 @@ export const authApi = {
     return data;
   },
 
-  forgotPassword: async (input: { email: string }): Promise<{ ok: boolean; devCode?: string }> => {
-    const { data } = await api.post<{ ok: boolean; devCode?: string }>('/auth/forgot-password', input);
+  forgotPassword: async (input: { email: string }): Promise<{ ok: boolean }> => {
+    const { data } = await api.post<{ ok: boolean }>('/auth/forgot-password', input);
     return data;
   },
 

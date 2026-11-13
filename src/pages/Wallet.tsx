@@ -33,8 +33,8 @@ import type {
   WithdrawalStatus,
 } from '@/features/wallet/api';
 
-// Keep in sync with backend WITHDRAWAL_MIN default (rupees).
-const WITHDRAWAL_MIN = 100;
+// Minimum withdrawal amount (rupees).
+const WITHDRAWAL_MIN = 1;
 
 const TXN_LABEL: Record<WalletTransactionType, string> = {
   SALE_CREDIT: 'Sale earnings',
@@ -42,6 +42,7 @@ const TXN_LABEL: Record<WalletTransactionType, string> = {
   REFUND_CREDIT: 'Refund',
   ADJUSTMENT: 'Adjustment',
   DEPOSIT_CREDIT: 'Deposit via Razorpay',
+  PLATFORM_PROFIT_CREDIT: 'Platform commission (10%)',
 };
 
 const WITHDRAWAL_TONE: Record<WithdrawalStatus, 'live' | 'warn' | 'danger' | 'neutral'> = {
@@ -52,6 +53,8 @@ const WITHDRAWAL_TONE: Record<WithdrawalStatus, 'live' | 'warn' | 'danger' | 'ne
 };
 
 export const WalletPage = () => {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'ADMIN';
   const wallet = useWallet();
   const transactions = useWalletTransactions();
   const withdrawals = useWithdrawals();
@@ -60,7 +63,7 @@ export const WalletPage = () => {
   const hasBank = !!acct;
   const payoutLabel = acct
     ? acct.type === 'UPI'
-      ? acct.upiId ?? acct.phone
+      ? acct.upiId
       : `•••• ${acct.last4}`
     : null;
 
@@ -71,8 +74,10 @@ export const WalletPage = () => {
 
   return (
     <div className="container max-w-3xl py-12">
-      <p className="kicker">Wallet</p>
-      <h1 className="display-serif mt-2 text-display-md font-semibold">Your balance</h1>
+      <p className="kicker">{isAdmin ? 'Admin Wallet' : 'Wallet'}</p>
+      <h1 className="display-serif mt-2 text-display-md font-semibold">
+        {isAdmin ? 'Admin balance' : 'Your balance'}
+      </h1>
 
       <div className="mt-8 rounded-lg border border-line bg-canvas p-7">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -82,7 +87,9 @@ export const WalletPage = () => {
               {wallet.isLoading ? '—' : formatPrice(balance, true)}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Earnings from completed sales, ready to withdraw.
+              {isAdmin
+                ? '10% platform commissions from completed auctions, ready to claim.'
+                : 'Earnings from completed sales, ready to withdraw.'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -173,10 +180,20 @@ const WithdrawButton = ({
   }
 
   return (
-    <Button size="md" onClick={onOpen} disabled={!canWithdraw}>
-      <ArrowUpRight className="h-4 w-4" />
-      Withdraw
-    </Button>
+    <div className="flex flex-col items-end">
+      <Button
+        size="md"
+        onClick={onOpen}
+        disabled={!canWithdraw}
+        title={!canWithdraw ? `Minimum balance to withdraw is ${formatPrice(WITHDRAWAL_MIN, true)}` : undefined}
+      >
+        <ArrowUpRight className="h-4 w-4" />
+        Withdraw
+      </Button>
+      {!canWithdraw && (
+        <span className="text-[11px] text-muted mt-1">Min. {formatPrice(WITHDRAWAL_MIN, true)}</span>
+      )}
+    </div>
   );
 };
 
@@ -310,7 +327,7 @@ const DepositDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v
       const res = await checkout.mutateAsync(amountNum.toFixed(2));
 
       if (res.provider !== 'razorpay') {
-        toast.info(res.message ?? 'Payments are in mock mode.');
+        toast.error('Payment gateway is currently unavailable. Please try again.');
         onOpenChange(false);
         return;
       }
@@ -445,7 +462,13 @@ const WithdrawalRow = ({ withdrawal }: { withdrawal: Withdrawal }) => (
       </p>
       <p className="text-xs text-muted">
         {formatDateTime(withdrawal.completedAt ?? withdrawal.requestedAt)}
+        {withdrawal.externalRef && !withdrawal.externalRef.startsWith('mock_')
+          ? ` · Ref: ${withdrawal.externalRef}`
+          : ''}
       </p>
+      {withdrawal.failureReason && (
+        <p className="text-xs text-danger mt-0.5">{withdrawal.failureReason}</p>
+      )}
     </div>
     <div className="flex items-center gap-3">
       <p className="tabular text-sm font-semibold text-ink">

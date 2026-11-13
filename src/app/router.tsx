@@ -20,6 +20,8 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AdminRoute } from '@/components/common/AdminRoute';
 import { AdminPage } from '@/pages/admin/AdminPage';
 import { AdminReportsPage } from '@/pages/admin/AdminReportsPage';
+import { AdminDisputesPage } from '@/pages/admin/AdminDisputesPage';
+import { AdminPayoutsPage } from '@/pages/admin/AdminPayoutsPage';
 import { AboutPage } from '@/pages/About';
 import { TermsPage } from '@/pages/Terms';
 import { PrivacyPage } from '@/pages/Privacy';
@@ -112,6 +114,22 @@ const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <AdminReportsPage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: '/admin/disputes',
+        element: (
+          <AdminRoute>
+            <AdminDisputesPage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: '/admin/payouts',
+        element: (
+          <AdminRoute>
+            <AdminPayoutsPage />
           </AdminRoute>
         ),
       },

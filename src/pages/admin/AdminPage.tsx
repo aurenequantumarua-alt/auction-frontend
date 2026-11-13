@@ -96,12 +96,24 @@ export const AdminPage = () => {
             {enriched.length} total auction{enriched.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link
-            to="/admin/reports"
+            to="/admin/payouts"
             className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-medium text-canvas transition-colors hover:bg-ink-800"
           >
-            View User Reports
+            Payouts &amp; Profit
+          </Link>
+          <Link
+            to="/admin/disputes"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink-50"
+          >
+            Disputes
+          </Link>
+          <Link
+            to="/admin/reports"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink-50"
+          >
+            User Reports
           </Link>
         </div>
       </div>

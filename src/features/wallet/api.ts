@@ -10,7 +10,8 @@ export type WalletTransactionType =
   | 'WITHDRAWAL_DEBIT'
   | 'REFUND_CREDIT'
   | 'ADJUSTMENT'
-  | 'DEPOSIT_CREDIT';
+  | 'DEPOSIT_CREDIT'
+  | 'PLATFORM_PROFIT_CREDIT';
 
 export interface WalletTransaction {
   id: string;
@@ -43,6 +44,9 @@ export interface Withdrawal {
   id: string;
   amount: string;
   status: WithdrawalStatus;
+  provider?: string;
+  externalRef?: string | null;
+  failureReason?: string | null;
   bankLast4: string;
   requestedAt: string;
   completedAt: string | null;
@@ -60,8 +64,7 @@ export type BankAccount =
   | {
       type: 'UPI';
       accountHolderName: string;
-      phone: string;
-      upiId: string | null;
+      upiId: string;
       status: 'PENDING' | 'VERIFIED';
     };
 
@@ -76,8 +79,7 @@ export type UpsertBankAccountInput =
   | {
       type: 'UPI';
       accountHolderName: string;
-      idToken: string;
-      upiId?: string;
+      upiId: string;
     };
 
 export type DepositCheckoutResponse =

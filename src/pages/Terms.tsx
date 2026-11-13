@@ -39,19 +39,19 @@ export const TermsPage = () => {
 
           {/* Section 2 */}
           <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-ink">2. User Eligibility & Payout Gating</h2>
+            <h2 className="font-display text-xl font-semibold text-ink">2. User Eligibility & Payout Methods</h2>
             <p>
-              You must be at least 18 years of age to register and participate in auctions on Aurene. To maintain marketplace integrity and deter fraudulent bidding:
+              You must be at least 18 years of age to register and participate in auctions on Aurene. To maintain marketplace integrity and compliance:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
                 <strong>Account Verification:</strong> Users must verify their email address and provide authentic personal details.
               </li>
               <li>
-                <strong>Financial Account Gating:</strong> In order to place bids or create listings, users must link a valid verified bank account (via IFSC directory check) or UPI-linked mobile number.
+                <strong>Seller Payout Methods:</strong> To claim and withdraw earnings from completed sales, sellers must link a valid verified Indian bank account or active UPI ID (GPay, PhonePe, Paytm, BHIM).
               </li>
               <li>
-                <strong>One Person, One Account:</strong> Maintaining duplicate accounts to manipulate bids or circumvent suspensions is strictly prohibited and subject to immediate termination.
+                <strong>One Person, One Account:</strong> Maintaining duplicate accounts to manipulate bids or circumvent suspensions is strictly prohibited and subject to immediate account closure.
               </li>
             </ul>
           </section>
@@ -121,19 +121,32 @@ export const TermsPage = () => {
 
           {/* Section 6 */}
           <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold text-ink">6. Platform Economics & Commission</h2>
+            <h2 className="font-display text-xl font-semibold text-ink">6. Platform Economics, 10% Commission & Escrow Settlement</h2>
             <p>
-              Aurene charges a transparent platform commission of <strong>10% (1,000 basis points)</strong> on the final winning bid price of successfully sold auctions.
+              Aurene operates on a transparent, success-only commission model:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                Upon verified buyer checkout, the net proceeds (90% of sale price) are credited to the seller’s Aurene Wallet balance.
+                <strong>10% Platform Commission:</strong> Aurene charges a flat commission of <strong>10% (ten percent)</strong> on the final hammer/sold price of each successfully concluded auction. We charge zero listing fees and zero buyer's premiums.
               </li>
               <li>
-                Sellers may initiate withdrawals from their wallet balance to their linked bank account at any time, subject to a minimum withdrawal threshold of ₹100.
+                <strong>Escrow Protection Hold:</strong> 100% of buyer payments are initially held securely in Escrow. Funds remain held throughout shipping and for a mandatory 48-hour delivery inspection window upon verified receipt by the buyer.
               </li>
               <li>
-                All monetary figures and transactions are processed in Indian Rupees (INR).
+                <strong>Automatic 90/10 Release:</strong> Upon explicit buyer confirmation or upon expiration of the 48-hour inspection period without a reported issue, the escrow funds automatically release:
+                <ul className="list-disc pl-6 mt-1 space-y-1">
+                  <li><strong>90% (Net Proceeds)</strong> is credited to the seller’s Aurene Wallet balance.</li>
+                  <li><strong>10% (Platform Commission)</strong> is credited to the Aurene Admin Commission account for curation, hosting, and escrow protection.</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Disputes & 100% Full Refunds:</strong> If the buyer raises a dispute within the 48-hour window with valid proof (e.g., counterfeit item, shipping damage, or material discrepancy) and the dispute is validated, the buyer is issued a 100% full refund and no commission is retained.
+              </li>
+              <li>
+                <strong>Wallet Withdrawals:</strong> Sellers may request withdrawal of their available wallet balance to their linked bank account or UPI ID at any time (minimum ₹100). All withdrawals are verified and settled via manual bank transfer with an official UTR number.
+              </li>
+              <li>
+                <strong>Currency:</strong> All prices, bids, deposits, and settlements are strictly in Indian Rupees (INR).
               </li>
             </ul>
           </section>

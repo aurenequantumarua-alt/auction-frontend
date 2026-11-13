@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Link2, X } from 'lucide-react';
+import { Link2, X, UploadCloud, Loader2 } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Label, FieldError } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { useCreateAuction } from '@/features/auctions/hooks';
-import { ConnectBankDialog, isBankAccountRequired } from '@/components/common/ConnectBankDialog';
 import { extractApiError } from '@/lib/api';
+import { uploadImage } from '@/lib/uploadImage';
 
 /**
  * Extracts a Google Drive file ID from various link formats:
@@ -71,7 +71,51 @@ export const CreateAuctionPage = () => {
   const create = useCreateAuction();
   const [images, setImages] = useState<{ url: string; isCover: boolean }[]>([]);
   const [driveLink, setDriveLink] = useState('');
-  const [bankGateOpen, setBankGateOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files);
+
+    const validFiles = fileArray.filter((file) => {
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) {
+        toast.error(`${file.name}: Unsupported image format (use JPG, PNG, WebP, or AVIF)`);
+        return false;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`${file.name}: File exceeds 8 MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setIsUploading(true);
+    const toastId = toast.loading(`Uploading ${validFiles.length} photo${validFiles.length > 1 ? 's' : ''} to Cloudflare R2…`);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of validFiles) {
+        const url = await uploadImage(file);
+        uploadedUrls.push(url);
+      }
+      setImages((prev) => {
+        const newImages = uploadedUrls.map((url, i) => ({
+          url,
+          isCover: prev.length === 0 && i === 0,
+        }));
+        return [...prev, ...newImages];
+      });
+      toast.success(`Uploaded ${validFiles.length} photo${validFiles.length > 1 ? 's' : ''} successfully!`, { id: toastId });
+    } catch {
+      toast.error('Failed to upload some images. Please try again.', { id: toastId });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time (no timezone, no seconds).
   const toLocalInput = (d: Date) => {
@@ -81,7 +125,7 @@ export const CreateAuctionPage = () => {
   const startNow = toLocalInput(new Date());
   const inOneWeek = toLocalInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
       condition: 'GOOD',
@@ -92,6 +136,8 @@ export const CreateAuctionPage = () => {
       endsAt: inOneWeek,
     },
   });
+
+  const basePriceVal = watch('basePrice');
 
   const handleAddDriveLink = () => {
     const link = driveLink.trim();
@@ -141,10 +187,6 @@ export const CreateAuctionPage = () => {
       toast.success(publish ? 'Listing published' : 'Draft saved');
       navigate(`/auctions/${auction.id}`);
     } catch (err) {
-      if (isBankAccountRequired(err)) {
-        setBankGateOpen(true);
-        return;
-      }
       toast.error(extractApiError(err).message);
     }
   };
@@ -219,6 +261,11 @@ export const CreateAuctionPage = () => {
             <Label htmlFor="basePrice">Starting price (₹)</Label>
             <Input id="basePrice" {...register('basePrice')} invalid={!!errors.basePrice} className="mt-1.5 tabular" />
             <FieldError message={errors.basePrice?.message} />
+            {Number(basePriceVal) > 0 && (
+              <p className="mt-1 text-[11px] text-muted">
+                You receive 90% (~₹{(Number(basePriceVal) * 0.9).toFixed(0)}) after the 10% platform fee upon sale.
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="minIncrement">Minimum bid increment (₹)</Label>
@@ -262,61 +309,141 @@ export const CreateAuctionPage = () => {
         </div>
 
         <div>
-          <Label>Images</Label>
+          <div className="flex items-center justify-between">
+            <Label>Listing Photos</Label>
+            <span className="text-xs text-muted">
+              {images.length > 0 ? `${images.length}/10 photos · click photo to set cover` : '1 to 10 photos'}
+            </span>
+          </div>
           <p className="mt-1 text-xs text-muted">
-            Paste a Google Drive sharing link. Make sure the file is set to <strong>"Anyone with the link"</strong> can view.
+            Upload clear photos showing the garment front, back, brand tag, care label, and details. Hosted on Cloudflare R2.
           </p>
-          <div className="mt-2 flex gap-2">
-            <Input
-              id="driveLink"
-              value={driveLink}
-              onChange={(e) => setDriveLink(e.target.value)}
-              className="flex-1"
-              placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddDriveLink();
-                }
-              }}
-            />
-            <Button
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            className="hidden"
+            onChange={(e) => handleFilesSelected(e.target.files)}
+          />
+
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleFilesSelected(e.dataTransfer.files);
+            }}
+            className="mt-3 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-canvas p-8 text-center cursor-pointer hover:border-accent/60 hover:bg-subtle/50 transition-all"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent">
+              {isUploading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <UploadCloud className="h-6 w-6" />
+              )}
+            </div>
+            {isUploading ? (
+              <p className="text-sm font-medium text-ink">Uploading to Cloudflare R2…</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-ink">
+                  Click to select photos or drag & drop here
+                </p>
+                <p className="text-xs text-muted">
+                  Supports Camera / Photo Library on mobile (JPEG, PNG, WebP up to 8 MB)
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="mt-2.5 flex items-center justify-between">
+            <button
               type="button"
-              variant="secondary"
-              onClick={handleAddDriveLink}
-              disabled={!driveLink.trim()}
+              onClick={() => setShowLinkInput(!showLinkInput)}
+              className="text-xs text-muted hover:text-ink underline transition-colors"
             >
-              <Link2 className="mr-1.5 h-4 w-4" />
-              Add
-            </Button>
+              {showLinkInput ? 'Hide link option' : 'Or paste Google Drive / image link'}
+            </button>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {images.map((img, idx) => (
-              <div key={idx} className="group relative aspect-square overflow-hidden rounded border border-line">
-                <img src={img.url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                <button
-                  type="button"
-                  className="absolute right-1.5 top-1.5 rounded bg-canvas/95 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => setImages((prev) => {
-                    const next = prev.filter((_, i) => i !== idx);
-                    // If we removed the cover image, make the first remaining image the cover
-                    if (img.isCover && next.length > 0 && next[0]) {
-                      next[0] = { url: next[0].url, isCover: true };
-                    }
-                    return next;
-                  })}
-                  aria-label="Remove image"
+
+          {showLinkInput && (
+            <div className="mt-2 flex gap-2">
+              <Input
+                id="driveLink"
+                value={driveLink}
+                onChange={(e) => setDriveLink(e.target.value)}
+                className="flex-1"
+                placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddDriveLink();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleAddDriveLink}
+                disabled={!driveLink.trim()}
+              >
+                <Link2 className="mr-1.5 h-4 w-4" />
+                Add Link
+              </Button>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {images.map((img, idx) => (
+                <div
+                  key={idx}
+                  className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition-all cursor-pointer ${
+                    img.isCover ? 'border-accent shadow-sm' : 'border-line hover:border-ink/40'
+                  }`}
+                  onClick={() => {
+                    setImages((prev) =>
+                      prev.map((item, i) => ({
+                        ...item,
+                        isCover: i === idx,
+                      })),
+                    );
+                  }}
+                  title="Click to set as cover photo"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-                {img.isCover && (
-                  <span className="absolute bottom-1.5 left-1.5 rounded bg-ink px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-kicker text-canvas">
-                    Cover
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+                  <img src={img.url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  <button
+                    type="button"
+                    className="absolute right-1.5 top-1.5 rounded-full bg-canvas/90 p-1 text-ink opacity-0 transition-opacity group-hover:opacity-100 hover:bg-canvas shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImages((prev) => {
+                        const next = prev.filter((_, i) => i !== idx);
+                        if (img.isCover && next.length > 0 && next[0]) {
+                          next[0] = { url: next[0].url, isCover: true };
+                        }
+                        return next;
+                      });
+                    }}
+                    aria-label="Remove image"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  {img.isCover ? (
+                    <span className="absolute bottom-1.5 left-1.5 rounded bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-canvas shadow">
+                      Cover
+                    </span>
+                  ) : (
+                    <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      Set as cover
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           {images.length >= 10 && (
             <p className="mt-2 text-xs text-muted">Maximum 10 images reached.</p>
           )}
@@ -342,8 +469,6 @@ export const CreateAuctionPage = () => {
           </Button>
         </div>
       </form>
-
-      <ConnectBankDialog open={bankGateOpen} onOpenChange={setBankGateOpen} reason="sell" />
     </div>
   );
 };

@@ -25,8 +25,8 @@ interface ConnectBankDialogProps {
 }
 
 const REASON_COPY: Record<NonNullable<ConnectBankDialogProps['reason']>, string> = {
-  bid: 'To place a bid you need a verified payout method — link a UPI ID (verified by phone OTP) or a bank account, so we can pay or refund you safely.',
-  sell: 'To list an item you need a verified payout method — link a UPI ID (verified by phone OTP) or a bank account, where your earnings are paid out after a sale.',
+  bid: 'To place a bid you need a verified payout method — link a UPI ID or a bank account, so we can pay or refund you safely.',
+  sell: 'To list an item you need a verified payout method — link a UPI ID or a bank account, where your earnings are paid out after a sale.',
 };
 
 export const ConnectBankDialog = ({
@@ -47,8 +47,8 @@ export const ConnectBankDialog = ({
           <DialogDescription>{REASON_COPY[reason]}</DialogDescription>
         </DialogHeader>
         <p className="mb-6 text-sm text-muted">
-          UPI is verified with a one-time code to your phone. Bank numbers are stored encrypted and
-          never shown back in full.
+          Link your UPI ID (GPay, PhonePe, Paytm, BHIM) or a bank account. Bank numbers are stored
+          encrypted and never shown back in full.
         </p>
         <div className="flex gap-3">
           <Button

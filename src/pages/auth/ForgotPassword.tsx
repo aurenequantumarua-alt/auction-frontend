@@ -11,7 +11,7 @@ import { useAuthStore } from '@/features/auth/authStore';
 import { extractApiError } from '@/lib/api';
 import { refreshSocketAuth } from '@/lib/socket';
 import { useState } from 'react';
-import { ArrowLeft, KeyRound, Sparkles } from 'lucide-react';
+import { ArrowLeft, KeyRound } from 'lucide-react';
 
 const RequestSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -38,7 +38,6 @@ export const ForgotPasswordPage = () => {
   const setSession = useAuthStore((s) => s.setSession);
 
   const [emailSentTo, setEmailSentTo] = useState<string | null>(null);
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const {
     register: registerRequest,
@@ -51,7 +50,6 @@ export const ForgotPasswordPage = () => {
   const {
     register: registerReset,
     handleSubmit: handleResetSubmit,
-    setValue: setResetValue,
     formState: { errors: resetErrors, isSubmitting: isResetSubmitting },
   } = useForm<ResetFormData>({
     resolver: zodResolver(ResetSchema),
@@ -59,12 +57,8 @@ export const ForgotPasswordPage = () => {
 
   const onRequestCode = async (data: RequestFormData) => {
     try {
-      const res = await authApi.forgotPassword({ email: data.email });
+      await authApi.forgotPassword({ email: data.email });
       setEmailSentTo(data.email);
-      if (res.devCode) {
-        setDevCode(res.devCode);
-        setResetValue('code', res.devCode);
-      }
       toast.success('Verification code sent to your email.');
     } catch (err) {
       toast.error(extractApiError(err).message);
@@ -100,22 +94,6 @@ export const ForgotPasswordPage = () => {
         <p className="mt-2 text-sm text-muted">
           We sent a 6-digit verification code to <span className="font-medium text-ink">{emailSentTo}</span>.
         </p>
-
-        {devCode && (
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-accent/20 bg-accent/5 p-3 text-xs text-accent">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 shrink-0" />
-              <span>Dev mode: code is <strong>{devCode}</strong></span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setResetValue('code', devCode)}
-              className="font-medium underline hover:opacity-80"
-            >
-              Fill code
-            </button>
-          </div>
-        )}
 
         <form onSubmit={handleResetSubmit(onResetPassword)} className="mt-6 space-y-4" noValidate>
           <div>
@@ -167,10 +145,7 @@ export const ForgotPasswordPage = () => {
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
-              onClick={() => {
-                setEmailSentTo(null);
-                setDevCode(null);
-              }}
+              onClick={() => setEmailSentTo(null)}
               className="text-xs text-muted hover:text-ink transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="h-3 w-3" />
