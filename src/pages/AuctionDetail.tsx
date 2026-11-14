@@ -198,7 +198,7 @@ export const AuctionDetailPage = () => {
               {/* Museum Gallery */}
               <AuctionGallery
                 images={auction.images}
-                alt={`${auction.brand} ${sanitize(auction.title)}`}
+                alt={`${sanitize(auction.brand)} ${sanitize(auction.title)}`}
                 isAntique={true}
               />
 
@@ -222,7 +222,7 @@ export const AuctionDetailPage = () => {
                         key={i}
                         className="inline-flex items-center rounded-full bg-[#FAF7F0] border border-[#E0DAD0] px-2.5 py-0.5 text-xs text-[#6B5A42] font-medium"
                       >
-                        #{tag}
+                        #{sanitize(tag)}
                       </span>
                     ))}
                   </div>
@@ -246,14 +246,14 @@ export const AuctionDetailPage = () => {
                     <dt className="text-[#8E8070] uppercase text-[10px] tracking-wider">Period / Maker</dt>
                     <dd className="mt-1 font-medium text-sm text-[#0E1622] flex items-center gap-1.5">
                       <Tag className="h-3.5 w-3.5 text-[#B89C6F]" />
-                      {auction.brand}
+                      {sanitize(auction.brand)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-[#8E8070] uppercase text-[10px] tracking-wider">Dimensions</dt>
                     <dd className="mt-1 font-medium text-sm text-[#0E1622] flex items-center gap-1.5">
                       <Ruler className="h-3.5 w-3.5 text-[#B89C6F]" />
-                      {auction.size}
+                      {sanitize(auction.size)}
                     </dd>
                   </div>
                   <div>
@@ -361,7 +361,7 @@ export const AuctionDetailPage = () => {
                 {/* Item Header Box */}
                 <div className="rounded-lg border border-[#E5E0D8] bg-white p-6 shadow-sm">
                   <div className="text-xs uppercase tracking-widest text-[#8E764E] font-medium">
-                    {auction.brand} · Item #{lotId}
+                    {sanitize(auction.brand)} · Item #{lotId}
                   </div>
                   <h1 className="font-serif text-2xl sm:text-3xl text-[#0E1622] font-normal leading-tight mt-1.5">
                     {sanitize(auction.title)}
@@ -395,7 +395,7 @@ export const AuctionDetailPage = () => {
 
       <div className="mt-6 grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <AuctionGallery images={auction.images} alt={`${auction.brand} ${sanitize(auction.title)}`} />
+          <AuctionGallery images={auction.images} alt={`${sanitize(auction.brand)} ${sanitize(auction.title)}`} />
 
           <div className="mt-12">
             <p className="kicker">Description</p>
@@ -409,14 +409,14 @@ export const AuctionDetailPage = () => {
               <dt className="kicker">Brand / Maker</dt>
               <dd className="mt-1.5 flex items-center gap-1.5 text-sm font-medium">
                 <Tag className="h-3.5 w-3.5 text-muted" />
-                {auction.brand}
+                {sanitize(auction.brand)}
               </dd>
             </div>
             <div>
               <dt className="kicker">Dimensions</dt>
               <dd className="mt-1.5 flex items-center gap-1.5 text-sm font-medium">
                 <Ruler className="h-3.5 w-3.5 text-muted" />
-                {auction.size}
+                {sanitize(auction.size)}
               </dd>
             </div>
             <div>
@@ -447,7 +447,7 @@ export const AuctionDetailPage = () => {
         </div>
 
         <div className="lg:col-span-5">
-          <p className="kicker">{auction.brand}</p>
+          <p className="kicker">{sanitize(auction.brand)}</p>
           <h1 className="display-serif mt-2 text-display-md font-semibold leading-tight text-ink">
             {sanitize(auction.title)}
           </h1>

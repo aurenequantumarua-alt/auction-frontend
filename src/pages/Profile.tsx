@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/features/auth/authStore';
 import { formatRelative } from '@/lib/format';
 import { Link } from 'react-router-dom';
+import { sanitize } from '@/lib/sanitize';
 
 import { useMyWins } from '@/features/auctions/hooks';
 
@@ -93,16 +94,16 @@ export const ProfilePage = () => {
                 <p className="text-sm font-medium text-ink">
                   {isRunnerUp ? '🥈 2nd Place · You’re Next in Line' : (notifTitle[n.type] ?? n.type)}
                   {auctionTitle && (
-                    <span className="font-normal text-muted"> · {auctionTitle}</span>
+                    <span className="font-normal text-muted"> · {sanitize(auctionTitle)}</span>
                   )}
                 </p>
                 {customMessage ? (
                   <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-400 font-medium">
-                    {customMessage}
+                    {sanitize(customMessage)}
                   </p>
                 ) : preview ? (
                   <p className="mt-0.5 line-clamp-1 text-xs text-muted/90 italic">
-                    "{preview}"
+                    "{sanitize(preview)}"
                   </p>
                 ) : null}
                 <p className="mt-1 text-[11px] text-muted">{formatRelative(n.createdAt)}</p>

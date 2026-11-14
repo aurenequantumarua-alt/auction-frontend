@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSocket, SOCKET_EVENTS } from '@/lib/socket';
 import { auctionKeys } from '@/features/auctions/hooks';
+import { sanitize } from '@/lib/sanitize';
 
 /**
  * Bridges Socket.IO events into TanStack Query cache invalidations.
@@ -29,18 +30,19 @@ export const useRealtimeBridge = () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
       if (n?.type === 'OUTBID') {
         const payload = n.payload || {};
+        const safeTitle = sanitize(String(payload.title || 'the auction'));
         if (payload.isRunnerUp) {
           toast.info(
-            `🥈 2nd Place: You're next in line for "${payload.title || 'the auction'}". If the winner forfeits, this item will be offered to you!`,
+            `🥈 2nd Place: You're next in line for "${safeTitle}". If the winner forfeits, this item will be offered to you!`,
             { duration: 8000 },
           );
         } else {
           const newAmt = payload.newAmount ? `₹${Number(payload.newAmount).toLocaleString('en-IN')}` : '';
           toast.warning(
-            `You've been outbid on "${payload.title || 'an item'}"! ${newAmt ? `Current high bid: ${newAmt}.` : ''}`,
+            `You've been outbid on "${safeTitle}"! ${newAmt ? `Current high bid: ${newAmt}.` : ''}`,
             {
               duration: 8000,
-              action: payload.auctionId
+              action: payload.auctionId && /^[a-z0-9]+$/i.test(String(payload.auctionId))
                 ? {
                     label: 'Increase Bid',
                     onClick: () => {

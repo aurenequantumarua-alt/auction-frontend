@@ -1,6 +1,7 @@
 import { formatDateTime, formatPrice } from '@/lib/format';
 import { type BidEntry } from '../types';
 import { cn } from '@/lib/cn';
+import { sanitize } from '@/lib/sanitize';
 
 interface BidHistoryProps {
   bids: BidEntry[];
@@ -69,7 +70,7 @@ export const BidHistory = ({ bids, highlightedBidId, isAntique }: BidHistoryProp
               </div>
               <div>
                 <p className={cn('font-medium', isAntique ? 'text-[#0E1622]' : 'text-sm text-ink')}>
-                  {b.bidder.name}
+                  {sanitize(b.bidder.name)}
                   {isAntique && isTop && (
                     <span className="ml-2 text-[10px] uppercase font-sans tracking-wider border border-[#B89C6F]/40 bg-[#F4EFE6] text-[#7A633F] px-1.5 py-0.5 rounded font-medium">
                       Leading Bid

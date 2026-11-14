@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { api, extractApiError } from '@/lib/api';
+import { sanitize } from '@/lib/sanitize';
 
 interface ShipModalProps {
   settlementId: string;
@@ -35,7 +36,7 @@ export const ShipModal = ({ settlementId, auctionTitle, onClose, onSuccess }: Sh
       <div className="w-full max-w-md rounded-xl border border-line bg-canvas p-6 shadow-xl">
         <h3 className="font-display text-lg font-semibold text-ink">Dispatch Item</h3>
         <p className="mt-1 text-sm text-muted">
-          Ship &ldquo;{auctionTitle}&rdquo; and provide tracking details for the buyer.
+          Ship &ldquo;{sanitize(auctionTitle)}&rdquo; and provide tracking details for the buyer.
         </p>
 
         <div className="mt-5 space-y-4">
