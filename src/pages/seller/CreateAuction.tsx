@@ -269,7 +269,11 @@ export const CreateAuctionPage = () => {
         ...(data.buyNowPrice ? { buyNowPrice: data.buyNowPrice } : {}),
         startsAt: startsAtDate.toISOString(),
         endsAt: endsAtDate.toISOString(),
-        tags: (data.tags ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+        tags: (data.tags ?? '')
+          .split(',')
+          .map((s) => s.trim().replace(/^#/, ''))
+          .filter(Boolean)
+          .slice(0, 10),
         images: images.map(({ url, isCover }) => ({ url, isCover })),
         ...(isAntique && provenance.trim() ? { provenance: provenance.trim() } : {}),
         ...(isAntique && provenanceProofUrls.length > 0 ? { provenanceProofUrls } : {}),
@@ -290,20 +294,20 @@ export const CreateAuctionPage = () => {
 
       <form className="mt-10 space-y-8" noValidate>
         <div>
-          <Label htmlFor="title">Title</Label>
-          <Input id="title" {...register('title')} invalid={!!errors.title} className="mt-1.5" placeholder="Felted wool field coat" />
+          <Label htmlFor="title">Item Name</Label>
+          <Input id="title" {...register('title')} invalid={!!errors.title} className="mt-1.5" placeholder="Enter item name" />
           <FieldError message={errors.title?.message} />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="brand">Brand</Label>
-            <Input id="brand" {...register('brand')} invalid={!!errors.brand} className="mt-1.5" />
+            <Label htmlFor="brand">Period / Maker</Label>
+            <Input id="brand" {...register('brand')} invalid={!!errors.brand} className="mt-1.5" placeholder="e.g. Meiji Era, Cartier, Victorian, or Unknown" />
             <FieldError message={errors.brand?.message} />
           </div>
           <div>
-            <Label htmlFor="size">Size / Dimensions</Label>
-            <Input id="size" {...register('size')} invalid={!!errors.size} className="mt-1.5" placeholder="e.g. M, 32, 10x12 in, or N/A" />
+            <Label htmlFor="size">Dimensions / Size</Label>
+            <Input id="size" {...register('size')} invalid={!!errors.size} className="mt-1.5" placeholder="e.g. 10 × 12 × 4 in, 25 cm, or N/A" />
             <FieldError message={errors.size?.message} />
           </div>
         </div>
@@ -339,6 +343,12 @@ export const CreateAuctionPage = () => {
               )}
             />
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="tags">Tags (Optional)</Label>
+          <Input id="tags" {...register('tags')} className="mt-1.5" placeholder="e.g. Edo Period, Horology, 19th Century, Hand-carved" />
+          <p className="mt-1 text-xs text-muted">Separate multiple tags with commas (up to 10 tags).</p>
         </div>
 
         <div>
@@ -505,10 +515,6 @@ export const CreateAuctionPage = () => {
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="tags">Tags (comma-separated)</Label>
-          <Input id="tags" {...register('tags')} className="mt-1.5" placeholder="archive, fw19, deadstock" />
-        </div>
 
         <div>
           <div className="flex items-center justify-between">

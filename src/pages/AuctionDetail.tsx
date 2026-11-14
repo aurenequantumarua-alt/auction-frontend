@@ -213,6 +213,20 @@ export const AuctionDetailPage = () => {
                 <p className="text-sm sm:text-base text-[#2E384D] leading-relaxed whitespace-pre-line font-light">
                   {sanitize(auction.description)}
                 </p>
+
+                {auction.tags && auction.tags.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-[#F0ECE1] flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-wider text-[#8E8070] font-medium mr-1">Tags:</span>
+                    {auction.tags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center rounded-full bg-[#FAF7F0] border border-[#E0DAD0] px-2.5 py-0.5 text-xs text-[#6B5A42] font-medium"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Specification Details */}
