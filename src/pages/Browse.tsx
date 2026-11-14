@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuctions } from '@/features/auctions/hooks';
 import { AuctionCard, AuctionCardSkeleton } from '@/features/auctions/components/AuctionCard';
 import { AuctionFilters } from '@/features/auctions/components/AuctionFilters';
@@ -18,8 +18,15 @@ const queryFromParams = (sp: URLSearchParams): AuctionListQuery => ({
 });
 
 export const BrowsePage = () => {
+  const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
   const [query, setQuery] = useState<AuctionListQuery>(() => queryFromParams(sp));
+
+  useEffect(() => {
+    if (sp.get('category') === 'Antiques') {
+      navigate('/antiques', { replace: true });
+    }
+  }, [sp, navigate]);
 
   const update = (next: AuctionListQuery) => {
     setQuery(next);
@@ -39,7 +46,7 @@ export const BrowsePage = () => {
     <div className="container py-12">
       <div className="mb-10">
         <p className="kicker">Marketplace</p>
-        <h1 className="display-serif mt-2 text-display-lg font-semibold text-ink">Browse auctions</h1>
+        <h1 className="display-serif mt-2 text-display-lg font-semibold text-ink">Explore Auctions</h1>
       </div>
 
       <AuctionFilters value={query} onChange={update} />
@@ -51,14 +58,14 @@ export const BrowsePage = () => {
           </div>
         ) : data?.items.length === 0 ? (
           <EmptyState
-            title="No auctions match those filters"
-            description="Try widening your search — clear a filter or change the category."
+            title="No items match those filters"
+            description="Try widening your search — clear a filter or select another department."
             action={<Button onClick={() => update({ sort: 'newest', page: 1 })}>Clear filters</Button>}
           />
         ) : (
           <>
             <div className="mb-6 flex items-center justify-between text-sm text-muted">
-              <span>{data?.total ?? 0} result{(data?.total ?? 0) === 1 ? '' : 's'}</span>
+              <span>{data?.total ?? 0} item{(data?.total ?? 0) === 1 ? '' : 's'} available</span>
               {isFetching && <span>Refreshing…</span>}
             </div>
             <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

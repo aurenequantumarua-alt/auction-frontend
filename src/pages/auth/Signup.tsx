@@ -99,13 +99,13 @@ export const SignupPage = () => {
 
   return (
     <>
-      <p className="kicker">Create account</p>
-      <h1 className="mt-3 font-display text-3xl font-semibold text-ink">Join Aurene.</h1>
-      <p className="mt-2 text-sm text-muted">Bid, list, and follow auctions you care about.</p>
+      <p className="kicker">Membership</p>
+      <h1 className="mt-3 font-display text-3xl font-semibold text-ink">Join Auréne</h1>
+      <p className="mt-2 text-sm text-muted">Bid on fine antiques, rare watches, and historic artifacts.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
         <div>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">Full Name</Label>
           <Input id="name" autoComplete="name" {...register('name')} invalid={!!errors.name} className="mt-1.5" />
           <FieldError message={errors.name?.message} />
         </div>
@@ -121,13 +121,13 @@ export const SignupPage = () => {
           <p className="mt-1.5 text-xs text-muted">At least 8 characters.</p>
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating…' : 'Create account'}
+          {isSubmitting ? 'Joining…' : 'Join Auréne'}
         </Button>
       </form>
 
       <p className="mt-8 text-sm text-muted">
         Already have an account?{' '}
-        <Link to="/login" className="font-medium text-ink hover:underline">Sign in</Link>
+        <Link to="/login" className="font-medium text-ink hover:underline">Sign In</Link>
       </p>
     </>
   );

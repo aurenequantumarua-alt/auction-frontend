@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { auctionsApi, inquiriesApi, type AuctionListQuery, type CreateAuctionInput } from './api';
 
 export const auctionKeys = {
@@ -120,9 +121,17 @@ export const useWatchToggle = (auctionId: string) => {
   return useMutation({
     mutationFn: (watch: boolean) =>
       watch ? auctionsApi.watch(auctionId) : auctionsApi.unwatch(auctionId),
-    onSuccess: () => {
+    onSuccess: (_data, watch) => {
       qc.invalidateQueries({ queryKey: auctionKeys.detail(auctionId) });
       qc.invalidateQueries({ queryKey: ['watchlist'] });
+      if (watch) {
+        toast.success('Added to your Watchlist');
+      } else {
+        toast.info('Removed from your Watchlist');
+      }
+    },
+    onError: () => {
+      toast.error('Could not update watchlist. Please try again.');
     },
   });
 };

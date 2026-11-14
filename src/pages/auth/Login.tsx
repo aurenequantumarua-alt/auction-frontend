@@ -101,9 +101,9 @@ export const LoginPage = () => {
 
   return (
     <>
-      <p className="kicker">Sign in</p>
-      <h1 className="mt-3 font-display text-3xl font-semibold text-ink">Welcome back.</h1>
-      <p className="mt-2 text-sm text-muted">Continue where you left off.</p>
+      <p className="kicker">Authentication</p>
+      <h1 className="mt-3 font-display text-3xl font-semibold text-ink">Sign In</h1>
+      <p className="mt-2 text-sm text-muted">Access your account, bids, and won auctions.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
         <div>
@@ -125,13 +125,13 @@ export const LoginPage = () => {
           <FieldError message={errors.password?.message} />
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+          {isSubmitting ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
 
       <p className="mt-8 text-sm text-muted">
-        New to Aurene?{' '}
-        <Link to="/signup" className="font-medium text-ink hover:underline">Create an account</Link>
+        New to Auréne?{' '}
+        <Link to="/signup" className="font-medium text-ink hover:underline">Join Auréne</Link>
       </p>
     </>
   );

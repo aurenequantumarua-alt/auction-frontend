@@ -10,19 +10,19 @@ export const AboutPage = () => {
         <div className="container max-w-4xl text-center">
           <p className="kicker">The Aurene Manifesto</p>
           <h1 className="display-serif mt-4 text-display-xl font-semibold text-ink leading-tight">
-            Where archival fashion finds its rightful next custodian.
+            Where rare pieces and historic artifacts find their next home.
           </h1>
           <p className="mt-6 text-lg text-muted leading-relaxed">
-            Aurene was founded on a singular conviction: exceptional garments are cultural artifacts, not disposable apparel. We built a high-transparency auction house designed for rare archive pulls, runway samples, and storied wardrobe pieces.
+            Aurene was founded on a singular conviction: exceptional pieces deserve a transparent, trusted marketplace. We built a platform designed for genuine antiques, rare horology, and storied historical artifacts.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button asChild size="lg">
               <Link to="/browse">
-                Explore live drops <ArrowRight className="ml-1 h-4 w-4" />
+                Explore Live Auctions <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link to="/sell">Apply to sell</Link>
+              <Link to="/antiques">Antiques</Link>
             </Button>
           </div>
         </div>
@@ -109,9 +109,9 @@ export const AboutPage = () => {
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 text-accent">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="mt-6 font-display text-lg font-semibold text-ink">Protected Escrow & Ledger</h3>
+              <h3 className="mt-6 font-display text-lg font-semibold text-ink">Protected Escrow & Settlement</h3>
               <p className="mt-2 text-sm text-muted leading-relaxed">
-                Payments are securely processed via Razorpay with encrypted bank ledger accounting. Sellers receive their funds seamlessly once settlements are final.
+                Payments are held safely in escrow until delivery and your 48-hour inspection window conclude. Sellers receive their funds seamlessly once settlements are final.
               </p>
             </div>
 

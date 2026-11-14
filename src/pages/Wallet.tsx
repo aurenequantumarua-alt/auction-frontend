@@ -21,10 +21,7 @@ import {
   useWallet,
   useWalletTransactions,
   useWithdrawals,
-  useDepositCheckout,
-  useDepositVerify,
 } from '@/features/wallet/hooks';
-import { loadRazorpay } from '@/lib/razorpay';
 import { useAuthStore } from '@/features/auth/authStore';
 import type {
   WalletTransaction,
@@ -68,7 +65,6 @@ export const WalletPage = () => {
     : null;
 
   const [open, setOpen] = useState(false);
-  const [depositOpen, setDepositOpen] = useState(false);
 
   const balance = wallet.data?.balance ?? '0';
 
@@ -92,11 +88,7 @@ export const WalletPage = () => {
                 : 'Earnings from completed sales, ready to withdraw.'}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button size="md" variant="secondary" onClick={() => setDepositOpen(true)}>
-              <ArrowDownLeft className="h-4 w-4" />
-              Deposit
-            </Button>
+          <div>
             <WithdrawButton
               balance={balance}
               hasBank={hasBank}
@@ -113,8 +105,6 @@ export const WalletPage = () => {
         hasBank={hasBank}
         destination={payoutLabel}
       />
-
-      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} />
 
       <section className="mt-12">
         <h2 className="font-display text-2xl font-semibold text-ink">Transactions</h2>
@@ -302,110 +292,6 @@ const WithdrawDialog = ({
 
           <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
             {request.isPending ? 'Requesting…' : 'Confirm withdrawal'}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const DepositDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
-  const [amount, setAmount] = useState('');
-  const checkout = useDepositCheckout();
-  const verify = useDepositVerify();
-  const user = useAuthStore((s) => s.user);
-
-  const amountNum = Number(amount);
-  const error = amount === '' ? null : Number.isNaN(amountNum) || amountNum <= 0 ? 'Enter a valid amount' : null;
-  const canSubmit = !error && amount !== '' && !checkout.isPending && !verify.isPending;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-
-    try {
-      const res = await checkout.mutateAsync(amountNum.toFixed(2));
-
-      if (res.provider !== 'razorpay') {
-        toast.error('Payment gateway is currently unavailable. Please try again.');
-        onOpenChange(false);
-        return;
-      }
-
-      await loadRazorpay();
-      if (!window.Razorpay) {
-        toast.error('Could not load the payment SDK.');
-        return;
-      }
-
-      const rzp = new window.Razorpay({
-        key: res.keyId,
-        amount: res.amount,
-        currency: res.currency,
-        name: res.name,
-        description: res.description,
-        order_id: res.orderId,
-        prefill: { name: user?.name, email: user?.email },
-        theme: { color: '#1c1917' },
-        handler: async (resp) => {
-          try {
-            await verify.mutateAsync({
-              amount: amountNum.toFixed(2),
-              razorpayOrderId: resp.razorpay_order_id,
-              razorpayPaymentId: resp.razorpay_payment_id,
-              razorpaySignature: resp.razorpay_signature,
-            });
-            toast.success(`Successfully deposited ${formatPrice(amountNum, true)}`);
-          } catch {
-            // Payment was already captured by Razorpay — the server-side
-            // webhook will credit the wallet automatically even if this
-            // verify call failed (e.g. due to an expired auth token).
-            toast.info(
-              'Payment received! Your wallet will be credited shortly.',
-              { duration: 6000 },
-            );
-          } finally {
-            setAmount('');
-            onOpenChange(false);
-          }
-        },
-        modal: { ondismiss: () => toast.info('Deposit cancelled.') },
-      });
-      rzp.on('payment.failed', (r) => toast.error(r.error?.description ?? 'Payment failed.'));
-      rzp.open();
-    } catch (err) {
-      toast.error(extractApiError(err).message);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) setAmount(''); onOpenChange(v); }}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Deposit funds</DialogTitle>
-          <DialogDescription>Add funds to your wallet using Razorpay.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="kicker mb-1.5 block">Amount</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">₹</span>
-              <Input
-                type="number"
-                step="0.01"
-                min={1}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="pl-7 text-base font-medium tabular"
-                inputMode="decimal"
-                placeholder="0.00"
-                autoFocus
-              />
-            </div>
-            {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
-          </div>
-          <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
-            {checkout.isPending || verify.isPending ? 'Processing…' : 'Proceed to Payment'}
           </Button>
         </form>
       </DialogContent>

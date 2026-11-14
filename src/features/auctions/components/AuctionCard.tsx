@@ -75,7 +75,7 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
               <Badge tone="neutral" className="backdrop-blur bg-canvas/85">Ended</Badge>
             )}
             {status === 'SOLD' && <Badge tone="accent">Sold</Badge>}
-            {status === 'CANCELLED' && <Badge tone="danger">Cancelled</Badge>}
+            {status === 'CANCELLED' && <Badge tone="danger">Withdrawn</Badge>}
           </div>
         </div>
 
@@ -86,8 +86,8 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
           </h3>
           <div className="flex items-baseline justify-between pt-1.5">
             <div>
-              <p className="text-[11px] uppercase tracking-kicker text-muted">
-                {isEnded ? 'Final bid' : auction.currentBid ? 'Current bid' : 'Starting at'}
+              <p className="text-[11px] uppercase tracking-kicker text-muted font-medium">
+                {isEnded ? 'Final bid' : auction.currentBid ? 'Current bid' : 'Starting bid'}
               </p>
               <p className="font-display text-xl font-semibold tabular text-ink">
                 {formatPrice(currentAmount, true)}
@@ -99,7 +99,7 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
               ) : (
                 <>
                   <p className="text-[11px] uppercase tracking-kicker text-muted">
-                    {isUpcoming ? 'Starts' : 'Ends'}
+                    {isUpcoming ? 'Opens' : 'Ends'}
                   </p>
                   {isUpcoming ? (
                     <Countdown endsAt={auction.startsAt} compact className="text-sm font-medium" />
@@ -117,7 +117,7 @@ export const AuctionCard = ({ auction, className }: AuctionCardProps) => {
           )}
           {isLive && auction.buyNowPrice && (
             <p className="text-xs font-medium text-accent">
-              ⚡ Buy Now {formatPrice(auction.buyNowPrice, true)}
+              ⚡ Buy Now for {formatPrice(auction.buyNowPrice, true)}
             </p>
           )}
         </div>

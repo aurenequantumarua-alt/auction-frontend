@@ -32,6 +32,8 @@ export interface CreateAuctionInput {
   startsAt: string;
   endsAt: string;
   tags: string[];
+  provenance?: string;
+  provenanceProofUrls?: string[];
   images: { url: string; isCover?: boolean }[];
   publish: boolean;
 }
@@ -91,7 +93,7 @@ export const auctionsApi = {
     return data;
   },
 
-  myBids: async (): Promise<{ items: { id: string; amount: string; status: string; placedAt: string; auction: AuctionListItem }[] }> => {
+  myBids: async (): Promise<{ items: { id: string; amount: string; status: string; isRunnerUp?: boolean; placedAt: string; auction: AuctionListItem }[] }> => {
     const { data } = await api.get('/auctions/me/bids');
     return data;
   },

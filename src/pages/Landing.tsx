@@ -33,42 +33,42 @@ export const LandingPage = () => {
             <p className="kicker">Curated since 2026</p>
             <h1 className="display-serif mt-4 text-display-xl font-semibold text-ink">
               An auction house <br />
-              for the considered <em className="not-italic text-accent">wardrobe</em>.
+              for exceptional <em className="not-italic text-accent">antiques &amp; storied pieces</em>.
             </h1>
             <p className="mt-6 max-w-xl text-base text-muted">
-              Archive pieces, deadstock, and personal pulls — placed in front of an audience that knows the difference. New auctions every week.
+              Documented provenance, verified authenticity, and our 48-hour escrow inspection guarantee. Discover extraordinary pieces with history.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link to="/browse?sort=newest">Browse live auctions <ArrowRight className="h-4 w-4" /></Link>
+                <Link to="/browse?sort=newest">Explore Live Auctions <ArrowRight className="h-4 w-4" /></Link>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <Link to="/sell">List a piece</Link>
+                <Link to="/antiques">Antiques</Link>
               </Button>
             </div>
           </div>
           <div className="relative lg:col-span-5">
             <div className="grid grid-cols-2 gap-3">
               <img
-                src="https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=900&q=80"
-                alt=""
-                className="aspect-[3/4] w-full rounded-lg object-cover"
+                src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900&q=80"
+                alt="Fine Horology & Antiques"
+                className="aspect-[3/4] w-full rounded-lg object-cover shadow-sm"
               />
               <img
-                src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=900&q=80"
-                alt=""
-                className="mt-10 aspect-[3/4] w-full rounded-lg object-cover"
+                src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=900&q=80"
+                alt="Heritage Art & Artifacts"
+                className="mt-10 aspect-[3/4] w-full rounded-lg object-cover shadow-sm"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 1. First: Newest drops */}
+      {/* 1. First: Newest listings */}
       <section className="container py-16 lg:py-20">
         <div className="flex items-end justify-between">
           <div>
-            <p className="kicker">Just dropped</p>
+            <p className="kicker">Recently Catalogued</p>
             <h2 className="display-serif mt-2 text-display-md font-semibold">Newest listings</h2>
           </div>
           <Link to="/browse?sort=newest" className="text-sm text-muted hover:text-ink">
@@ -83,7 +83,7 @@ export const LandingPage = () => {
           ) : (
             <div className="col-span-full rounded-xl border border-line bg-canvas p-12 text-center">
               <p className="font-display text-lg font-medium text-ink">No live auctions right now</p>
-              <p className="mt-2 text-sm text-muted">Check back soon for new drops, or list your piece.</p>
+              <p className="mt-2 text-sm text-muted">Check back soon for upcoming auctions, or list an item.</p>
             </div>
           )}
         </div>

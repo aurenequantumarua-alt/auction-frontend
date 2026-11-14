@@ -153,17 +153,17 @@ export const WonAuctionsPage = () => {
 
   return (
     <div className="container py-12">
-      <p className="kicker">Won</p>
-      <h1 className="display-serif mt-2 text-display-lg font-semibold">Auctions you&apos;ve won</h1>
+      <p className="kicker">Acquisitions</p>
+      <h1 className="display-serif mt-2 text-display-lg font-semibold">Won Auctions</h1>
 
       <div className="mt-10 space-y-4">
         {isLoading ? (
           <div className="text-sm text-muted">Loading…</div>
         ) : (data?.items.length ?? 0) === 0 ? (
           <EmptyState
-            title="No wins yet"
-            description="Once you win an auction, it appears here for checkout."
-            action={<Button asChild><Link to="/browse">Browse</Link></Button>}
+            title="No won auctions yet"
+            description="Items you win at auction appear here for payment and delivery tracking."
+            action={<Button asChild><Link to="/browse">Explore Auctions</Link></Button>}
           />
         ) : (
           data!.items.map((w) => {
@@ -234,9 +234,9 @@ export const WonAuctionsPage = () => {
                   <div className="mt-4 rounded-md border border-warn/30 bg-warn/5 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-medium text-warn">⏱ Inspection Window</p>
+                        <p className="text-sm font-medium text-warn">⏱ 48-Hour Inspection Window</p>
                         <p className="mt-1 text-sm text-muted">
-                          Verify authenticity within{' '}
+                          Inspect your item within{' '}
                           {settlement.inspectionDeadline && (
                             <InspectionCountdown deadline={settlement.inspectionDeadline} />
                           )}
@@ -245,10 +245,10 @@ export const WonAuctionsPage = () => {
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button size="sm" onClick={() => handleConfirmRelease(settlement.id)}>
-                        ✓ Item is Authentic — Release Funds
+                        ✓ Accept & Release Payment
                       </Button>
                       <Button size="sm" variant="danger" onClick={() => setDisputeSettlementId(settlement.id)}>
-                        ✗ Report Issue / Fake
+                        Report a Problem
                       </Button>
                     </div>
                   </div>

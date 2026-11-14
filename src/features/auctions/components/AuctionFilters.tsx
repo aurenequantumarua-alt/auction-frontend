@@ -1,10 +1,23 @@
+import { useNavigate } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import type { AuctionListQuery } from '../api';
 
-const CATEGORIES = ['Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories', 'Bags', 'Suits', 'Knitwear', 'Denim', 'Vintage'];
+const CATEGORIES = [
+  'Antiques',
+  'Collectibles & Art',
+  'Clothing & Fashion',
+  'Footwear & Sneakers',
+  'Watches & Jewellery',
+  'Bags & Accessories',
+  'Electronics & Gadgets',
+  'Home & Furniture',
+  'Books & Media',
+  'Automobilia & Vehicle Parts',
+  'Other',
+];
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
   { value: 'LIKE_NEW', label: 'Like new' },
@@ -25,6 +38,7 @@ interface AuctionFiltersProps {
 }
 
 export const AuctionFilters = ({ value, onChange }: AuctionFiltersProps) => {
+  const navigate = useNavigate();
   const update = (patch: Partial<AuctionListQuery>) => onChange({ ...value, ...patch, page: 1 });
 
   return (
@@ -42,7 +56,13 @@ export const AuctionFilters = ({ value, onChange }: AuctionFiltersProps) => {
       <div className="flex flex-wrap items-center gap-3">
         <Select
           value={value.category ?? '__any'}
-          onValueChange={(v) => update({ category: v === '__any' ? undefined : v })}
+          onValueChange={(v) => {
+            if (v === 'Antiques') {
+              navigate('/antiques');
+              return;
+            }
+            update({ category: v === '__any' ? undefined : v });
+          }}
         >
           <SelectTrigger className="h-10 w-[180px]">
             <SelectValue placeholder="Category" />
@@ -83,10 +103,10 @@ export const AuctionFilters = ({ value, onChange }: AuctionFiltersProps) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__any">All statuses</SelectItem>
-            <SelectItem value="LIVE">Live now</SelectItem>
+            <SelectItem value="LIVE">Live</SelectItem>
             <SelectItem value="UPCOMING">Upcoming</SelectItem>
             <SelectItem value="ENDED">Ended</SelectItem>
-            <SelectItem value="SOLD">Sold</SelectItem>
+            <SelectItem value="SOLD">Acquired</SelectItem>
           </SelectContent>
         </Select>
 

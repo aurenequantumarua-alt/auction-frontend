@@ -26,6 +26,7 @@ import { AdminShillAlertsPage } from '@/pages/admin/AdminShillAlertsPage';
 import { AboutPage } from '@/pages/About';
 import { TermsPage } from '@/pages/Terms';
 import { PrivacyPage } from '@/pages/Privacy';
+import { AntiquesLuxePage } from '@/pages/AntiquesLuxePage';
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <LandingPage /> },
       { path: '/browse', element: <BrowsePage /> },
+      { path: '/antiques', element: <AntiquesLuxePage /> },
       { path: '/auctions/:id', element: <AuctionDetailPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/terms', element: <TermsPage /> },

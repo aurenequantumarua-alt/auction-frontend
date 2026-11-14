@@ -85,20 +85,26 @@ export const ProfilePage = () => {
               (n.payload?.question as string | undefined) ??
               (n.payload?.answerPreview as string | undefined);
             const isPaymentDue = n.type === 'WON' || n.type === 'PAYMENT_DUE';
+            const isRunnerUp = n.type === 'OUTBID' && Boolean(n.payload?.isRunnerUp);
+            const customMessage = n.payload?.message as string | undefined;
 
             const content = (
               <>
                 <p className="text-sm font-medium text-ink">
-                  {notifTitle[n.type] ?? n.type}
+                  {isRunnerUp ? '🥈 2nd Place · You’re Next in Line' : (notifTitle[n.type] ?? n.type)}
                   {auctionTitle && (
                     <span className="font-normal text-muted"> · {auctionTitle}</span>
                   )}
                 </p>
-                {preview && (
+                {customMessage ? (
+                  <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-400 font-medium">
+                    {customMessage}
+                  </p>
+                ) : preview ? (
                   <p className="mt-0.5 line-clamp-1 text-xs text-muted/90 italic">
                     "{preview}"
                   </p>
-                )}
+                ) : null}
                 <p className="mt-1 text-[11px] text-muted">{formatRelative(n.createdAt)}</p>
               </>
             );

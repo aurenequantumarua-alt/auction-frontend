@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { getSocket, SOCKET_EVENTS } from '@/lib/socket';
 import { auctionKeys } from '@/features/auctions/hooks';
 
@@ -24,8 +25,33 @@ export const useRealtimeBridge = () => {
     const onExtended = (e: { auctionId: string }) => {
       qc.invalidateQueries({ queryKey: auctionKeys.detail(e.auctionId) });
     };
-    const onNotification = () => {
+    const onNotification = (n?: { id?: string; type?: string; payload?: any }) => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
+      if (n?.type === 'OUTBID') {
+        const payload = n.payload || {};
+        if (payload.isRunnerUp) {
+          toast.info(
+            `🥈 2nd Place: You're next in line for "${payload.title || 'the auction'}". If the winner forfeits, this item will be offered to you!`,
+            { duration: 8000 },
+          );
+        } else {
+          const newAmt = payload.newAmount ? `₹${Number(payload.newAmount).toLocaleString('en-IN')}` : '';
+          toast.warning(
+            `You've been outbid on "${payload.title || 'an item'}"! ${newAmt ? `Current high bid: ${newAmt}.` : ''}`,
+            {
+              duration: 8000,
+              action: payload.auctionId
+                ? {
+                    label: 'Increase Bid',
+                    onClick: () => {
+                      window.location.href = `/auctions/${payload.auctionId}`;
+                    },
+                  }
+                : undefined,
+            },
+          );
+        }
+      }
     };
     const onInquiry = (e: { auctionId: string }) => {
       qc.invalidateQueries({ queryKey: ['inquiries', e.auctionId] });

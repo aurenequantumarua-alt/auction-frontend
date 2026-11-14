@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Link2, X, UploadCloud, Loader2 } from 'lucide-react';
+import { Link2, X, UploadCloud, Loader2, ShieldCheck } from 'lucide-react';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Label, FieldError } from '@/components/ui/Label';
 import { Button } from '@/components/ui/Button';
@@ -42,23 +42,45 @@ const extractDriveFileId = (url: string): string | null => {
 const driveDirectUrl = (fileId: string): string =>
   `https://lh3.googleusercontent.com/d/${fileId}`;
 
+export const CATEGORIES = [
+  'Antiques',
+  'Collectibles & Art',
+  'Clothing & Fashion',
+  'Footwear & Sneakers',
+  'Watches & Jewellery',
+  'Bags & Accessories',
+  'Electronics & Gadgets',
+  'Home & Furniture',
+  'Books & Media',
+  'Automobilia & Vehicle Parts',
+  'Other',
+] as const;
+
 const Schema = z.object({
   title: z.string().min(3).max(140),
   description: z.string().min(20).max(4000),
-  category: z.enum(['Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories', 'Bags', 'Suits', 'Knitwear', 'Denim', 'Vintage']),
+  category: z.enum(CATEGORIES),
   brand: z.string().min(1).max(80),
   condition: z.enum(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']),
   size: z.string().min(1).max(20),
   basePrice: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount'),
   minIncrement: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount'),
   buyNowPrice: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount').optional().or(z.literal('')),
-  startsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid date'),
+  startsAt: z
+    .string()
+    .refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid date')
+    .refine(
+      (v) => Date.parse(v) >= Date.now() + 24 * 60 * 60 * 1000 - 5 * 60 * 1000,
+      'Auction cannot start immediately. Must be scheduled at least 24 hours (1 day) in advance.',
+    )
+    .refine(
+      (v) => Date.parse(v) <= Date.now() + 30 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000,
+      'Auction cannot be scheduled more than 30 days (1 month) in advance.',
+    ),
   endsAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Invalid date'),
   tags: z.string().optional(),
 });
 type FormData = z.infer<typeof Schema>;
-
-const CATEGORIES = ['Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories', 'Bags', 'Suits', 'Knitwear', 'Denim', 'Vintage'] as const;
 const CONDITIONS = [
   { value: 'NEW', label: 'New with tags' },
   { value: 'LIKE_NEW', label: 'Like new' },
@@ -74,6 +96,52 @@ export const CreateAuctionPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [provenance, setProvenance] = useState('');
+  const [provenanceProofUrls, setProvenanceProofUrls] = useState<string[]>([]);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const proofFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProofFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files);
+
+    if (provenanceProofUrls.length + fileArray.length > 5) {
+      toast.error('You can upload at most 5 documentation proof files.');
+      return;
+    }
+
+    const validFiles = fileArray.filter((file) => {
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) {
+        toast.error(`${file.name}: Unsupported image format (use JPG, PNG, WebP, or AVIF)`);
+        return false;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`${file.name}: File exceeds 8 MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setIsUploadingProof(true);
+    const toastId = toast.loading(`Uploading ${validFiles.length} documentation proof file${validFiles.length > 1 ? 's' : ''}…`);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of validFiles) {
+        const url = await uploadImage(file);
+        uploadedUrls.push(url);
+      }
+      setProvenanceProofUrls((prev) => [...prev, ...uploadedUrls]);
+      toast.success('Documentation proof uploaded successfully', { id: toastId });
+    } catch {
+      toast.error('Failed to upload proof files. Please try again.', { id: toastId });
+    } finally {
+      setIsUploadingProof(false);
+      if (proofFileInputRef.current) proofFileInputRef.current.value = '';
+    }
+  };
 
   const handleFilesSelected = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -122,22 +190,40 @@ export const CreateAuctionPage = () => {
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const startNow = toLocalInput(new Date());
-  const inOneWeek = toLocalInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
+  // Schedule constraints: min 24 hours in future, max 30 days
+  const defaultStartDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const defaultEndDate = new Date(defaultStartDate.getTime() + 24 * 60 * 60 * 1000);
+  const minStartDate = toLocalInput(defaultStartDate);
+  const maxStartDate = toLocalInput(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
       condition: 'GOOD',
-      category: 'Outerwear',
+      category: 'Antiques',
       basePrice: '50.00',
       minIncrement: '5.00',
-      startsAt: startNow,
-      endsAt: inOneWeek,
+      startsAt: toLocalInput(defaultStartDate),
+      endsAt: toLocalInput(defaultEndDate),
     },
   });
 
   const basePriceVal = watch('basePrice');
+  const startsAtVal = watch('startsAt');
+  const categoryVal = watch('category');
+  const isAntique = categoryVal === 'Antiques';
+
+  // Automatically keep endsAt locked to exactly 24 hours after startsAt
+  useEffect(() => {
+    if (startsAtVal) {
+      const parsed = new Date(startsAtVal);
+      if (!Number.isNaN(parsed.getTime())) {
+        const autoEnd = new Date(parsed.getTime() + 24 * 60 * 60 * 1000);
+        setValue('endsAt', toLocalInput(autoEnd), { shouldValidate: true });
+      }
+    }
+  }, [startsAtVal, setValue]);
 
   const handleAddDriveLink = () => {
     const link = driveLink.trim();
@@ -168,6 +254,9 @@ export const CreateAuctionPage = () => {
       return;
     }
     try {
+      const startsAtDate = new Date(data.startsAt);
+      const endsAtDate = new Date(startsAtDate.getTime() + 24 * 60 * 60 * 1000);
+
       const auction = await create.mutateAsync({
         title: data.title,
         description: data.description,
@@ -178,10 +267,12 @@ export const CreateAuctionPage = () => {
         basePrice: data.basePrice,
         minIncrement: data.minIncrement,
         ...(data.buyNowPrice ? { buyNowPrice: data.buyNowPrice } : {}),
-        startsAt: new Date(data.startsAt).toISOString(),
-        endsAt: new Date(data.endsAt).toISOString(),
+        startsAt: startsAtDate.toISOString(),
+        endsAt: endsAtDate.toISOString(),
         tags: (data.tags ?? '').split(',').map((s) => s.trim()).filter(Boolean),
         images: images.map(({ url, isCover }) => ({ url, isCover })),
+        ...(isAntique && provenance.trim() ? { provenance: provenance.trim() } : {}),
+        ...(isAntique && provenanceProofUrls.length > 0 ? { provenanceProofUrls } : {}),
         publish,
       });
       toast.success(publish ? 'Listing published' : 'Draft saved');
@@ -193,9 +284,9 @@ export const CreateAuctionPage = () => {
 
   return (
     <div className="container max-w-3xl py-12">
-      <p className="kicker">New listing</p>
-      <h1 className="display-serif mt-2 text-display-md font-semibold">List a piece</h1>
-      <p className="mt-3 text-sm text-muted">All fields are required. You can save as a draft and publish later.</p>
+      <p className="kicker">Sell</p>
+      <h1 className="display-serif mt-2 text-display-md font-semibold">List an Item for Auction</h1>
+      <p className="mt-3 text-sm text-muted">Fill in the details below. Your item will be scheduled for auction.</p>
 
       <form className="mt-10 space-y-8" noValidate>
         <div>
@@ -211,8 +302,8 @@ export const CreateAuctionPage = () => {
             <FieldError message={errors.brand?.message} />
           </div>
           <div>
-            <Label htmlFor="size">Size</Label>
-            <Input id="size" {...register('size')} invalid={!!errors.size} className="mt-1.5" placeholder="M / 32 / 9" />
+            <Label htmlFor="size">Size / Dimensions</Label>
+            <Input id="size" {...register('size')} invalid={!!errors.size} className="mt-1.5" placeholder="e.g. M, 32, 10x12 in, or N/A" />
             <FieldError message={errors.size?.message} />
           </div>
         </div>
@@ -256,14 +347,104 @@ export const CreateAuctionPage = () => {
           <FieldError message={errors.description?.message} />
         </div>
 
+        {/* ── ANTIQUE-EXCLUSIVE PROVENANCE & PROOF SECTION ──────────────────────── */}
+        {isAntique && (
+          <div className="rounded-xl border border-[#B89C6F]/40 bg-[#FAF7F0] p-6 space-y-5">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-[#0E1622] text-[#E8DCC8]">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-semibold text-[#0E1622]">
+                  Provenance &amp; Authenticity Proof
+                </h3>
+                <p className="text-xs text-[#6B5A42] mt-0.5">
+                  Exclusive to Antiques. Document known history, maker hallmarks, previous ownership, and attach verification proof.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="provenance" className="text-xs font-semibold uppercase tracking-wider text-[#7A633F]">
+                Provenance &amp; Historical Context
+              </Label>
+              <Textarea
+                id="provenance"
+                value={provenance}
+                onChange={(e) => setProvenance(e.target.value)}
+                className="mt-1.5 border border-[#E0DAD0] bg-white text-sm text-[#0E1622] focus:border-[#B89C6F]"
+                rows={3}
+                placeholder="e.g. Sourced from a private collection in Kyoto, Japan. Circa late Edo period. Maker hallmarks stamped on iron tsuba. Undamaged."
+              />
+              <p className="mt-1 text-[11px] text-[#7A6E5D]">
+                Detail previous ownership, era/century, maker stamps, appraisal records, or exhibition references.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-[#7A633F]">
+                  Proof Documents &amp; Certificates
+                </Label>
+                <span className="text-xs text-[#7A6E5D]">
+                  {provenanceProofUrls.length}/5 files
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-[#7A6E5D]">
+                Upload certificates of authenticity, hallmark macro photos, appraisal paperwork, or accession receipts.
+              </p>
+
+              <input
+                ref={proofFileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                className="hidden"
+                onChange={(e) => handleProofFilesSelected(e.target.files)}
+              />
+
+              <div
+                onClick={() => proofFileInputRef.current?.click()}
+                className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#B89C6F]/50 bg-white/60 p-6 text-center hover:bg-white hover:border-[#B89C6F] transition-all"
+              >
+                <UploadCloud className="h-6 w-6 text-[#8E764E]" />
+                <span className="text-xs font-medium text-[#0E1622]">
+                  {isUploadingProof ? 'Uploading proof…' : 'Click to attach proof documents or hallmark photos'}
+                </span>
+                <span className="text-[11px] text-[#8E8070]">
+                  JPG, PNG, WebP or AVIF up to 8 MB
+                </span>
+              </div>
+
+              {provenanceProofUrls.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  {provenanceProofUrls.map((url, idx) => (
+                    <div key={idx} className="relative group h-20 w-20 rounded-lg overflow-hidden border border-[#D5CBBF] shadow-xs">
+                      <img src={url} alt={`Proof ${idx + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setProvenanceProofUrls((prev) => prev.filter((_, i) => i !== idx))}
+                        className="absolute right-1 top-1 rounded-full bg-black/75 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Remove proof"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="basePrice">Starting price (₹)</Label>
+            <Label htmlFor="basePrice">Opening bid (₹)</Label>
             <Input id="basePrice" {...register('basePrice')} invalid={!!errors.basePrice} className="mt-1.5 tabular" />
             <FieldError message={errors.basePrice?.message} />
             {Number(basePriceVal) > 0 && (
               <p className="mt-1 text-[11px] text-muted">
-                You receive 90% (~₹{(Number(basePriceVal) * 0.9).toFixed(0)}) after the 10% platform fee upon sale.
+                You receive 90% (~₹{(Number(basePriceVal) * 0.9).toFixed(0)}) after the 10% platform fee upon successful settlement.
               </p>
             )}
           </div>
@@ -285,21 +466,42 @@ export const CreateAuctionPage = () => {
           />
           <FieldError message={errors.buyNowPrice?.message} />
           <p className="mt-1 text-xs text-muted">
-            Optional: set a price at which a buyer can purchase and end this auction immediately.
-            Must be at least 20% above starting price.
+            Optional: set a fixed price at which a buyer can purchase this item immediately.
+            Must be at least 20% above opening bid.
           </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="startsAt">Auction starts</Label>
-            <Input id="startsAt" type="datetime-local" {...register('startsAt')} invalid={!!errors.startsAt} className="mt-1.5" />
+            <Label htmlFor="startsAt">Auction starts (Min 24h ahead, Max 1 month)</Label>
+            <Input
+              id="startsAt"
+              type="datetime-local"
+              min={minStartDate}
+              max={maxStartDate}
+              {...register('startsAt')}
+              invalid={!!errors.startsAt}
+              className="mt-1.5"
+            />
             <FieldError message={errors.startsAt?.message} />
+            <p className="mt-1 text-[11px] text-muted">
+              Auctions cannot start immediately. Must be scheduled between 1 day and 30 days in advance.
+            </p>
           </div>
           <div>
-            <Label htmlFor="endsAt">Auction ends</Label>
-            <Input id="endsAt" type="datetime-local" {...register('endsAt')} invalid={!!errors.endsAt} className="mt-1.5" />
+            <Label htmlFor="endsAt">Auction ends (Strict 24-hour window)</Label>
+            <Input
+              id="endsAt"
+              type="datetime-local"
+              {...register('endsAt')}
+              invalid={!!errors.endsAt}
+              className="mt-1.5 bg-ink-50/50 cursor-not-allowed text-muted select-none"
+              readOnly
+            />
             <FieldError message={errors.endsAt?.message} />
+            <p className="mt-1 text-[11px] text-muted">
+              Automatically locked to exactly 24 hours. Bidding closes 24 hours after the start time.
+            </p>
           </div>
         </div>
 
@@ -316,7 +518,7 @@ export const CreateAuctionPage = () => {
             </span>
           </div>
           <p className="mt-1 text-xs text-muted">
-            Upload clear photos showing the garment front, back, brand tag, care label, and details. Hosted on Cloudflare R2.
+            Upload clear, well-lit photos showing condition, maker marks, hallmarks, or details.
           </p>
 
           <input
@@ -465,7 +667,7 @@ export const CreateAuctionPage = () => {
             disabled={create.isPending}
             onClick={handleSubmit((d) => onSubmit(d, true))}
           >
-            {create.isPending ? 'Publishing…' : 'Publish listing'}
+            {create.isPending ? 'Publishing…' : 'List Item'}
           </Button>
         </div>
       </form>

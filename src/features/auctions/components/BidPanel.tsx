@@ -12,10 +12,11 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Countdown } from '@/components/common/Countdown';
-import { Badge, StatusDot } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { formatPrice, formatRelative } from '@/lib/format';
 import { api, extractApiError } from '@/lib/api';
 import { loadRazorpay } from '@/lib/razorpay';
@@ -83,6 +84,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
 
   const isLive = effectiveStatus === 'LIVE';
   const isUpcoming = effectiveStatus === 'UPCOMING';
+  const isAntique = auction.category === 'Antiques';
   const t = useCountdown(isUpcoming ? auction.startsAt : auction.endsAt);
 
   const currentAmount = auction.currentBid?.amount ?? auction.basePrice;
@@ -109,6 +111,33 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
       (auction.settlement?.currentWinnerBid?.bidderId === user.id ||
         auction.currentBid?.bidderId === user.id),
   );
+
+  const winnerBidderId =
+    auction.settlement?.currentWinnerBid?.bidderId ??
+    auction.currentBid?.bidderId ??
+    auction.bids?.find((b) => b.status === 'WON')?.bidder.id;
+
+  // Identify runner-up (highest bid by a different bidder that wasn't forfeited)
+  const runnerUpBid = useMemo(() => {
+    if (!auction.bids || auction.bids.length === 0) return null;
+    return (
+      auction.bids.find(
+        (b) => b.bidder.id !== winnerBidderId && b.status !== 'FORFEITED',
+      ) ?? null
+    );
+  }, [auction.bids, winnerBidderId]);
+
+  const isRunnerUp = Boolean(
+    user &&
+      !isWinner &&
+      runnerUpBid &&
+      runnerUpBid.bidder.id === user.id,
+  );
+
+  const isLeading = isLive && Boolean(user && auction.currentBid?.bidderId === user.id);
+  const isOutbidLive =
+    isLive &&
+    Boolean(user && !isLeading && auction.bids?.some((b) => b.bidder.id === user.id));
 
   const settlement = auction.settlement;
   const settlementStatus = settlement?.status;
@@ -259,29 +288,59 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
   };
 
   return (
-    <aside className="rounded-lg border border-line bg-canvas p-6 lg:sticky lg:top-24">
+    <aside
+      className={cn(
+        'p-6 lg:sticky lg:top-24 transition-colors rounded-xl',
+        isAntique
+          ? 'border border-[#B89C6F]/40 bg-white text-[#131C2A] shadow-md'
+          : 'border border-line bg-canvas',
+      )}
+    >
       <div className="flex items-center justify-between">
-        <p className="kicker">{auction.currentBid ? 'Current bid' : 'Starting at'}</p>
+        <p className={cn(isAntique ? 'text-xs uppercase tracking-wider text-[#8E764E] font-medium' : 'kicker')}>
+          {auction.currentBid ? 'Current bid' : 'Starting bid'}
+        </p>
         {isLive && (
-          <Badge tone="live" className="bg-success/10">
-            <StatusDot tone="live" />
-            Live
-          </Badge>
+          <span
+            className={cn(
+              isAntique
+                ? 'rounded px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'rounded bg-success/10 text-success text-xs px-2 py-0.5 font-medium',
+            )}
+          >
+            ● Live
+          </span>
         )}
-        {effectiveStatus === 'UPCOMING' && <Badge tone="ink">Upcoming</Badge>}
+        {effectiveStatus === 'UPCOMING' && (
+          <span
+            className={cn(
+              isAntique
+                ? 'rounded px-2.5 py-0.5 text-xs font-semibold bg-[#FAF7F0] text-[#7A633F] border border-[#B89C6F]/40'
+                : 'rounded bg-ink-100 text-ink text-xs px-2 py-0.5 font-medium',
+            )}
+          >
+            Upcoming
+          </span>
+        )}
         {effectiveStatus === 'ENDED' && <Badge tone="neutral">Ended</Badge>}
-        {effectiveStatus === 'PAYMENT_PENDING' && <Badge tone="warn">Payment pending</Badge>}
+        {effectiveStatus === 'PAYMENT_PENDING' && <Badge tone="warn">Payment Pending</Badge>}
         {effectiveStatus === 'SOLD' && <Badge tone="accent">Sold</Badge>}
-        {effectiveStatus === 'EXPIRED' && <Badge tone="neutral">Expired</Badge>}
+        {effectiveStatus === 'EXPIRED' && <Badge tone="neutral">Ended</Badge>}
       </div>
 
-      <p className="mt-3 font-display text-4xl font-semibold tabular text-ink">
+      <p
+        className={cn(
+          'mt-3 tabular',
+          isAntique ? 'font-serif text-4xl sm:text-5xl font-semibold text-[#0E1622]' : 'font-display text-4xl font-semibold text-ink',
+        )}
+      >
         {formatPrice(currentAmount, true)}
       </p>
-      <p className="mt-1 text-sm text-muted">
-        {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'}
-        {isLive && ' · You can still claim it'}
+      <p className={cn('mt-1', isAntique ? 'text-xs text-[#5C6675]' : 'text-sm text-muted')}>
+        {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'} placed
+        {isLive && ' · Bidding in progress'}
         {ended && isWinner && ' · You won this auction'}
+        {ended && isRunnerUp && ' · You placed 2nd (Next in Line)'}
       </p>
 
       {/* ── Buy It Now banner ────────────────────────────────── */}
@@ -295,13 +354,13 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-between border-y border-line py-3 text-sm">
-        <span className="text-muted">
+      <div className={cn('mt-5 flex items-center justify-between py-3', isAntique ? 'border-y border-[#F0ECE1] text-xs' : 'border-y border-line text-sm')}>
+        <span className={cn(isAntique ? 'text-[#8E8070] font-medium' : 'text-muted')}>
           {isUpcoming ? 'Bidding opens in' : ended ? 'Auction ended' : 'Time left'}
         </span>
         <Countdown
           endsAt={isUpcoming ? auction.startsAt : auction.endsAt}
-          className="font-medium"
+          className={cn(isAntique ? 'text-xs font-semibold text-[#0E1622]' : 'font-medium')}
         />
       </div>
 
@@ -316,9 +375,8 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                 <span>You won this auction!</span>
               </div>
               <p className="text-xs leading-relaxed text-ink-700">
-                Complete your payment to secure this item. Your funds are protected in{' '}
-                <strong>platform Escrow</strong> and will only be released after you receive and
-                inspect the item.
+                Complete your payment to secure this item. Your money is held in <strong>secure escrow</strong> and 
+                is only released after your piece is delivered and your 48-hour in-person inspection period ends.
               </p>
               {settlement?.paymentDeadline && (
                 <div className="flex items-center justify-between text-xs text-muted border-t border-amber-500/20 pt-2">
@@ -339,7 +397,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                 {paying ? 'Processing…' : `Pay ${formatPrice(currentAmount, true)} Now`}
               </Button>
               <p className="text-[11px] text-center text-muted">
-                🔒 Protected by Aurene Escrow Guarantee
+                🔒 Backed by our 48-Hour Escrow Inspection Guarantee
               </p>
             </div>
           )}
@@ -350,7 +408,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                 <AlertTriangle className="h-4 w-4" />
                 Payment Window Expired
               </p>
-              <p>The payment deadline for this auction has lapsed. This claim has been forfeited.</p>
+              <p>The payment deadline for this auction has lapsed. This item has been offered to the next highest bidder.</p>
             </div>
           )}
 
@@ -385,13 +443,12 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                     className="w-full"
                     onClick={() => setDisputeOpen(true)}
                   >
-                    ✗ Report Issue / Not Delivered
+                    Report Issue / Not Delivered
                   </Button>
                 </div>
               ) : (
                 <p className="text-xs text-muted">
-                  The seller has been notified to ship your item. Tracking info will be shown here
-                  once dispatched.
+                  The seller has been notified to ship your item. Tracking details will appear here once dispatched.
                 </p>
               )}
             </div>
@@ -401,13 +458,13 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
           {settlement && settlementStatus === 'DELIVERED_PENDING' && (
             <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 space-y-3">
               <div className="flex items-center justify-between text-sm font-semibold text-warn">
-                <span>⏱ 48h Inspection Window</span>
+                <span>⏱ 48-Hour Inspection Period</span>
                 {settlement.inspectionDeadline && (
                   <InspectionCountdown deadline={settlement.inspectionDeadline} />
                 )}
               </div>
               <p className="text-xs text-muted">
-                Please verify that the item is authentic and as described.
+                Please examine the piece to verify that it matches the catalogue description.
               </p>
               <div className="space-y-2 pt-1">
                 <Button
@@ -416,7 +473,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                   className="w-full bg-accent text-white hover:bg-accent/90"
                   onClick={() => handleConfirmRelease(settlement.id)}
                 >
-                  ✓ Item is Authentic — Release Funds
+                  ✓ Approve &amp; Release Payment
                 </Button>
                 <Button
                   type="button"
@@ -425,7 +482,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                   className="w-full"
                   onClick={() => setDisputeOpen(true)}
                 >
-                  ✗ Report Issue / Counterfeit
+                  Report a Problem
                 </Button>
               </div>
             </div>
@@ -436,11 +493,10 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-2">
               <p className="font-semibold text-sm text-destructive flex items-center gap-1.5">
                 <AlertTriangle className="h-4 w-4" />
-                Dispute Under Admin Review
+                Under Support Review
               </p>
               <p className="text-xs text-muted">
-                Our support team is reviewing your dispute evidence. Escrow funds will remain safely
-                locked until resolution.
+                Our support team is reviewing your report. Escrow funds remain safely locked.
               </p>
             </div>
           )}
@@ -450,7 +506,7 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
             <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-1">
               <p className="font-semibold text-sm text-accent">✓ Order Completed</p>
               <p className="text-xs text-muted">
-                Item confirmed authentic & funds released to seller.
+                Item approved and payment released to the seller.
               </p>
             </div>
           )}
@@ -462,77 +518,183 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                 <RotateCcw className="h-4 w-4" />
                 Payment Refunded
               </p>
-              <p className="text-xs text-muted">The funds have been returned to your wallet.</p>
+              <p className="text-xs text-muted">The funds have been returned to your balance.</p>
             </div>
           )}
         </div>
       ) : isOwner ? (
-        /* ── SELLER VIEW ───────────────────────────────────────────────── */
+        /* ── SELLER VIEW ─────────────────────────────────────────────── */
         <div className="mt-5 space-y-3">
-          <p className="rounded bg-ink-50 px-3 py-2 text-sm text-muted">
+          <p
+            className={cn(
+              'p-3 text-xs',
+              isAntique
+                ? 'rounded border border-[#B89C6F]/30 bg-[#FAF7F0] text-[#7A633F]'
+                : 'rounded bg-ink-50 px-3 py-2 text-sm text-muted',
+            )}
+          >
             This is your listing.
           </p>
           {isPaymentPending && !isPaymentExpired && (
-            <div className="rounded-md border border-warn/30 bg-warn/5 p-3 text-xs text-muted">
-              <p className="font-medium text-warn">⏳ Payment Pending</p>
+            <div className={cn('p-3 text-xs rounded', isAntique ? 'border border-amber-200 bg-amber-50 text-amber-900' : 'rounded-md border border-warn/30 bg-warn/5 text-muted')}>
+              <p className="font-semibold">⏳ Payment Pending</p>
               <p className="mt-1">
-                The winning bidder has 24 hours to complete checkout into platform Escrow.
+                The winning bidder has 24 hours to complete payment into escrow.
               </p>
             </div>
           )}
           {isPaymentPending && isPaymentExpired && (
-            <div className="rounded-md border border-warn/30 bg-warn/5 p-3 text-xs text-muted">
-              <p className="font-medium text-warn">⏳ Payment Window Expired</p>
+            <div className={cn('p-3 text-xs rounded', isAntique ? 'border border-red-200 bg-red-50 text-red-900' : 'rounded-md border border-warn/30 bg-warn/5 text-muted')}>
+              <p className="font-semibold">⏳ Payment Window Expired</p>
               <p className="mt-1">
                 The winning bidder did not complete payment within the deadline.
               </p>
             </div>
           )}
           {settlement && settlementStatus === 'ESCROW_HOLD' && (
-            <div className="rounded-md border border-accent/30 bg-accent/5 p-3 text-xs text-muted space-y-2">
-              <p className="font-medium text-accent">🔒 Buyer Paid — Funds in Escrow</p>
+            <div className={cn('p-3 text-xs space-y-2 rounded', isAntique ? 'border border-emerald-200 bg-emerald-50 text-emerald-900' : 'rounded-md border border-accent/30 bg-accent/5 text-muted')}>
+              <p className="font-semibold">🔒 Buyer Paid — Funds in Escrow</p>
               {!settlement.shippedAt ? (
                 <>
-                  <p>Please dispatch the item and enter the tracking details.</p>
+                  <p>Please dispatch the item and enter courier tracking details.</p>
                   <Button
                     type="button"
                     size="sm"
-                    className="w-full gap-2"
+                    className={cn('w-full gap-2', isAntique && 'bg-[#0E1622] text-[#FBFBF9] hover:bg-[#162335] rounded')}
                     onClick={() => setShipOpen(true)}
                   >
                     <Truck className="h-4 w-4" />
-                    Dispatch Item & Enter Tracking
+                    Ship Item &amp; Enter Tracking
                   </Button>
                 </>
               ) : (
                 <p>
                   Shipped via <strong>{settlement.courierName}</strong> ({settlement.trackingNumber}).
-                  Waiting for buyer inspection.
+                  Awaiting buyer delivery and inspection.
                 </p>
               )}
             </div>
           )}
           {settlementStatus === 'DELIVERED_PENDING' && (
-            <div className="rounded-md border border-warn/30 bg-warn/5 p-3 text-xs text-muted">
-              <p className="font-medium text-warn">📦 Item Delivered</p>
+            <div className={cn('p-3 text-xs rounded', isAntique ? 'border border-amber-200 bg-amber-50 text-amber-900' : 'rounded-md border border-warn/30 bg-warn/5 text-muted')}>
+              <p className="font-semibold">📦 Item Delivered</p>
               <p className="mt-1">Buyer 48-hour inspection period is in progress.</p>
             </div>
           )}
           {settlementStatus === 'COMPLETED' && (
-            <div className="rounded-md border border-accent/30 bg-accent/5 p-3 text-xs text-muted">
-              <p className="font-medium text-accent">✓ Sale Completed</p>
-              <p className="mt-1">90% sale funds have been credited to your wallet balance.</p>
+            <div className={cn('p-3 text-xs rounded', isAntique ? 'border border-emerald-200 bg-emerald-50 text-emerald-900' : 'rounded-md border border-accent/30 bg-accent/5 text-muted')}>
+              <p className="font-semibold">✓ Sale Completed</p>
+              <p className="mt-1">Net proceeds (90%) have been credited to your balance.</p>
             </div>
           )}
         </div>
       ) : isUpcoming ? (
-        <p className="mt-5 rounded bg-ink-50 px-3 py-2 text-sm text-muted">
-          This auction hasn&apos;t started yet. We&apos;ll open bidding the moment it goes live.
+        <p
+          className={cn(
+            'mt-5 p-3 text-xs',
+            isAntique
+              ? 'rounded border border-[#B89C6F]/30 bg-[#FAF7F0] text-[#7A633F]'
+              : 'rounded bg-ink-50 px-3 py-2 text-sm text-muted',
+          )}
+        >
+          This auction hasn&apos;t started yet. Bidding opens at the appointed start time.
         </p>
+      ) : ended && isRunnerUp ? (
+        <div className="mt-5 space-y-4">
+          {isPaymentPending && !isPaymentExpired && (
+            <div
+              className={cn(
+                'rounded-xl p-5 space-y-3',
+                isAntique
+                  ? 'border border-[#B89C6F]/50 bg-[#FAF7F0] text-[#131C2A]'
+                  : 'border border-amber-500/30 bg-amber-500/10 text-ink',
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-semibold text-sm text-amber-800 dark:text-amber-400">
+                  <span className="text-base">🥈</span>
+                  <span>2nd Place · You&apos;re Next in Line</span>
+                </div>
+                <span
+                  className={cn(
+                    'text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded',
+                    isAntique
+                      ? 'border border-[#B89C6F]/40 bg-[#F4EFE6] text-[#7A633F]'
+                      : 'bg-amber-500/20 text-amber-800 dark:text-amber-300',
+                  )}
+                >
+                  Backup Winner
+                </span>
+              </div>
+
+              <p className="text-xs leading-relaxed text-ink-700">
+                The winning bidder has 24 hours to complete payment. If they forfeit or fail to pay within the deadline, this piece will immediately be offered to you at your highest bid of{' '}
+                <strong className="text-ink font-semibold">
+                  {formatPrice(runnerUpBid?.amount ?? currentAmount, true)}
+                </strong>
+                .
+              </p>
+
+              {settlement?.paymentDeadline && (
+                <div className="flex items-center justify-between text-xs border-t border-amber-500/20 pt-2 text-muted">
+                  <span>Winner&apos;s payment deadline:</span>
+                  <span className="font-medium text-warn">
+                    {formatRelative(settlement.paymentDeadline)}
+                  </span>
+                </div>
+              )}
+
+              <div
+                className={cn(
+                  'rounded-lg p-2.5 text-[11px] text-muted flex items-start gap-2',
+                  isAntique ? 'bg-white/80 border border-[#E0DAD0]' : 'bg-white/60 dark:bg-black/20',
+                )}
+              >
+                <span>💡</span>
+                <span>
+                  No action needed right now. If the winning bidder forfeits, you will receive an instant notification and 24 hours to complete your purchase.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {isPaymentPending && isPaymentExpired && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5 space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-sm text-amber-800 dark:text-amber-400">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Winner Payment Deadline Lapsed</span>
+              </div>
+              <p className="text-xs text-ink-700 leading-relaxed">
+                The winning bidder did not complete payment within 24 hours. The piece is being offered to you as the runner-up! Please refresh in a moment to complete checkout.
+              </p>
+            </div>
+          )}
+
+          {(settlementStatus === 'ESCROW_HOLD' || settlementStatus === 'COMPLETED' || effectiveStatus === 'SOLD') && (
+            <div
+              className={cn(
+                'rounded-xl p-4 text-xs space-y-1',
+                isAntique
+                  ? 'border border-[#E0DAD0] bg-[#FAF8F5] text-[#5C6675]'
+                  : 'border border-line bg-ink-50/50 text-muted',
+              )}
+            >
+              <p className="font-semibold text-ink">Finished in 2nd Place</p>
+              <p>The winning bidder completed payment into escrow and acquired this piece. Thank you for your bids!</p>
+            </div>
+          )}
+        </div>
       ) : ended ? (
-        <div className="mt-5 rounded bg-ink-50 px-3 py-2 text-sm text-muted">
+        <div
+          className={cn(
+            'mt-5 p-3 text-xs',
+            isAntique
+              ? 'rounded border border-[#B89C6F]/30 bg-[#FAF7F0] text-[#7A633F]'
+              : 'rounded bg-ink-50 px-3 py-2 text-sm text-muted',
+          )}
+        >
           {effectiveStatus === 'PAYMENT_PENDING'
-            ? 'Bidding is closed. Pending payment from winning bidder.'
+            ? 'Bidding is closed. Pending checkout from winning bidder.'
             : effectiveStatus === 'SOLD'
               ? 'This item has been sold.'
               : effectiveStatus === 'EXPIRED'
@@ -541,29 +703,75 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
         </div>
       ) : (
         /* ── LIVE BIDDING FORM ─────────────────────────────────────────── */
-        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+        <div className="mt-5 space-y-3">
+          {isLeading && (
+            <div
+              className={cn(
+                'rounded-lg p-3 text-xs flex items-center gap-2 font-medium',
+                isAntique
+                  ? 'border border-[#B89C6F]/40 bg-[#FAF7F0] text-[#7A633F]'
+                  : 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400',
+              )}
+            >
+              <CheckCircle2 className="h-4 w-4 flex-none" />
+              <span>You are currently the leading bidder at {formatPrice(currentAmount, true)}</span>
+            </div>
+          )}
+
+          {isOutbidLive && (
+            <div
+              className={cn(
+                'rounded-lg p-3 text-xs flex items-center gap-2 font-medium',
+                isAntique
+                  ? 'border border-amber-300 bg-amber-50 text-amber-900'
+                  : 'border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-400',
+              )}
+            >
+              <AlertTriangle className="h-4 w-4 flex-none" />
+              <span>You’ve been outbid! Place a new bid below to reclaim the lead.</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="kicker mb-1.5 block">Your bid</label>
+            <label className={cn(isAntique ? 'text-xs uppercase tracking-wider text-[#8E764E] font-medium block mb-1.5' : 'kicker mb-1.5 block')}>
+              {isAntique ? 'Your Bid' : 'Your bid'}
+            </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">₹</span>
+              <span className={cn('absolute left-3 top-1/2 -translate-y-1/2', isAntique ? 'text-[#8E764E] font-medium' : 'text-muted')}>₹</span>
               <Input
                 type="number"
                 step="0.01"
                 min={minNext}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pl-7 text-base font-medium tabular"
+                className={cn(
+                  'pl-7 tabular',
+                  isAntique
+                    ? 'border border-[#E0DAD0] bg-white text-base font-medium text-[#0E1622] rounded focus:border-[#B89C6F]'
+                    : 'text-base font-medium',
+                )}
                 inputMode="decimal"
                 required
               />
             </div>
-            <p className="mt-1.5 text-xs text-muted">
+            <p className={cn('mt-1.5 text-xs', isAntique ? 'text-[#8E8070]' : 'text-muted')}>
               Enter {formatPrice(minNext, true)} or more (current bid +{' '}
               {formatPrice(auction.minIncrement, true)} increment)
             </p>
           </div>
-          <Button type="submit" size="lg" className="w-full" disabled={placeBid.isPending}>
-            {placeBid.isPending ? 'Placing…' : `Place bid · ${formatPrice(amount || minNext, true)}`}
+          <Button
+            type="submit"
+            size="lg"
+            className={cn(
+              'w-full',
+              isAntique
+                ? 'border-0 bg-[#0E1622] text-[#FBFBF9] hover:bg-[#162335] rounded font-medium text-xs tracking-wider uppercase py-3.5 shadow-sm'
+                : '',
+            )}
+            disabled={placeBid.isPending}
+          >
+            {placeBid.isPending ? 'Placing bid…' : `Place Bid · ${formatPrice(amount || minNext, true)}`}
           </Button>
 
           {/* ── Buy It Now ─────────────────────────────────────── */}
@@ -578,49 +786,64 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
                 type="button"
                 variant="secondary"
                 size="lg"
-                className="mt-3 w-full gap-2 border-accent/30 bg-accent/5 text-accent hover:bg-accent/10"
+                className={cn(
+                  'mt-3 w-full gap-2',
+                  isAntique
+                    ? 'border border-[#B89C6F]/40 bg-[#FAF7F0] text-[#7A633F] hover:bg-[#F3EDE0] rounded text-xs py-3 font-medium'
+                    : 'border-accent/30 bg-accent/5 text-accent hover:bg-accent/10',
+                )}
                 disabled={buyNow.isPending}
                 onClick={handleBuyNow}
               >
                 <Zap className="h-4 w-4" />
                 {buyNow.isPending
                   ? 'Processing…'
-                  : `Buy It Now · ${formatPrice(auction.buyNowPrice!, true)}`}
+                  : `Buy Now · ${formatPrice(auction.buyNowPrice!, true)}`}
               </Button>
               <p className="mt-1.5 text-center text-[11px] text-muted">
-                Skip the bidding — purchase immediately at the seller&apos;s fixed price.
+                Buy instantly without waiting for the auction to end.
               </p>
             </div>
           )}
         </form>
+      </div>
       )}
 
-      {!isOwner && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
-          className="mt-3 w-full"
-          onClick={() => {
-            if (!user) {
-              navigate('/login');
-              return;
-            }
-            watchToggle.mutate(!auction.isWatched);
-          }}
-        >
-          <Heart className={auction.isWatched ? 'h-4 w-4 fill-current' : 'h-4 w-4'} />
-          {auction.isWatched ? 'In watchlist' : 'Add to watchlist'}
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="secondary"
+        size="md"
+        className={cn(
+          'mt-3 w-full gap-2',
+          isAntique
+            ? 'border border-[#E0DAD0] bg-white text-[#0E1622] hover:bg-[#FAF8F5] rounded text-xs py-3 font-medium'
+            : '',
+        )}
+        disabled={watchToggle.isPending}
+        onClick={() => {
+          if (!user) {
+            navigate('/login');
+            return;
+          }
+          watchToggle.mutate(!auction.isWatched);
+        }}
+      >
+        <Heart
+          className={cn(
+            'h-4 w-4 transition-colors',
+            auction.isWatched ? 'fill-rose-500 text-rose-500' : isAntique ? 'text-[#8E764E]' : '',
+          )}
+        />
+        {auction.isWatched ? 'Saved to Watchlist' : 'Add to Watchlist'}
+      </Button>
 
       {t.totalMs > 0 && t.totalMs < 2 * 60 * 1000 && (
-        <p className="mt-4 rounded bg-warn/10 px-3 py-2 text-xs text-warn">
+        <p className={cn('mt-4 px-3 py-2 text-xs', isAntique ? 'rounded border border-amber-200 bg-amber-50 text-amber-900' : 'rounded bg-warn/10 text-warn')}>
           Bids in the last 30 seconds extend the auction by 30 seconds.
         </p>
       )}
 
-      <div className="mt-6 flex justify-center border-t border-line pt-4">
+      <div className={cn('mt-6 flex justify-center pt-4', isAntique ? 'border-t border-[#F0ECE1]' : 'border-t border-line')}>
         <button
           type="button"
           onClick={() => {
@@ -630,9 +853,12 @@ export const BidPanel = ({ auction }: BidPanelProps) => {
             }
             setReportOpen(true);
           }}
-          className="text-[11px] uppercase tracking-wider text-muted hover:text-ink transition-colors"
+          className={cn(
+            'text-[11px] uppercase tracking-wider transition-colors',
+            isAntique ? 'text-[#8E8070] hover:text-[#0E1622]' : 'text-muted hover:text-ink',
+          )}
         >
-          Report this listing
+          Report this item
         </button>
       </div>
 

@@ -107,12 +107,12 @@ export const SellPage = () => {
     return (
       <div className="container py-20">
         <EmptyState
-          title="Sign in to sell on Aurene"
-          description="Create an account or sign in to list pieces for auction."
+          title="Sign in to sell on Auréne"
+          description="Join Auréne or sign in to list items for auction."
           action={
             <div className="flex gap-3">
-              <Button asChild><Link to="/login">Sign in</Link></Button>
-              <Button asChild variant="secondary"><Link to="/signup">Create account</Link></Button>
+              <Button asChild><Link to="/login">Sign In</Link></Button>
+              <Button asChild variant="secondary"><Link to="/signup">Join Auréne</Link></Button>
             </div>
           }
         />
@@ -124,11 +124,11 @@ export const SellPage = () => {
     <div className="container py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="kicker">Seller</p>
-          <h1 className="display-serif mt-2 text-display-lg font-semibold">Your listings</h1>
+          <p className="kicker">Seller Dashboard</p>
+          <h1 className="display-serif mt-2 text-display-lg font-semibold">My Listings</h1>
         </div>
         <Button asChild size="lg">
-          <Link to="/sell/new">List a new item</Link>
+          <Link to="/sell/new">List an Item</Link>
         </Button>
       </div>
 
@@ -137,9 +137,9 @@ export const SellPage = () => {
           <div className="flex items-start gap-3">
             <Landmark className="mt-0.5 h-5 w-5 text-muted" />
             <div>
-              <p className="font-medium">Link a bank account or UPI to receive payouts</p>
+              <p className="font-medium">Link a bank account or UPI to receive payout proceeds</p>
               <p className="mt-0.5 text-sm text-muted">
-                Required before you can list items.
+                Required for payout disbursement following buyer inspection.
               </p>
             </div>
           </div>
@@ -150,9 +150,9 @@ export const SellPage = () => {
       )}
 
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <Stat label="Total earnings" value={earnings.data ? formatPrice(earnings.data.totalEarnings, true) : '—'} />
-        <Stat label="Sold" value={earnings.data?.soldCount?.toString() ?? '—'} />
-        <Stat label="Active listings" value={(listings.data?.items.filter((a) => a.status === 'LIVE' || a.status === 'UPCOMING').length ?? 0).toString()} />
+        <Stat label="Total Proceeds" value={earnings.data ? formatPrice(earnings.data.totalEarnings, true) : '—'} />
+        <Stat label="Items Sold" value={earnings.data?.soldCount?.toString() ?? '—'} />
+        <Stat label="Active Listings" value={(listings.data?.items.filter((a) => a.status === 'LIVE' || a.status === 'UPCOMING').length ?? 0).toString()} />
       </div>
 
       <div className="mt-12">
@@ -160,9 +160,9 @@ export const SellPage = () => {
           <div className="text-sm text-muted">Loading…</div>
         ) : (listings.data?.items.length ?? 0) === 0 ? (
           <EmptyState
-            title="You haven't listed anything yet"
-            description="When you list a piece, it shows up here with bids and earnings."
-            action={<Button asChild><Link to="/sell/new">Create your first listing</Link></Button>}
+            title="No listings yet"
+            description="When you list an item, it will appear here with live bidding and settlement tracking."
+            action={<Button asChild><Link to="/sell/new">List an Item</Link></Button>}
           />
         ) : (
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

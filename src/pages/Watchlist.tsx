@@ -10,9 +10,9 @@ export const WatchlistPage = () => {
   return (
     <div className="container py-12">
       <p className="kicker">Saved</p>
-      <h1 className="display-serif mt-2 text-display-lg font-semibold">Your watchlist</h1>
+      <h1 className="display-serif mt-2 text-display-lg font-semibold">Watchlist</h1>
       <p className="mt-3 max-w-xl text-sm text-muted">
-        Pieces you&apos;re tracking. We&apos;ll notify you when bidding heats up or an auction is ending.
+        Items you are watching. We will notify you when bidding opens or an auction is ending soon.
       </p>
 
       <div className="mt-12">
@@ -22,9 +22,9 @@ export const WatchlistPage = () => {
           </div>
         ) : (data?.items.length ?? 0) === 0 ? (
           <EmptyState
-            title="No saved auctions yet"
-            description="Tap the heart on any auction to add it here."
-            action={<Button asChild><Link to="/browse">Browse auctions</Link></Button>}
+            title="Your watchlist is empty"
+            description="Click the heart on any item to save it here."
+            action={<Button asChild><Link to="/browse">Explore Auctions</Link></Button>}
           />
         ) : (
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

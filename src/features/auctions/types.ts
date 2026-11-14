@@ -44,6 +44,8 @@ export interface AuctionListItem {
   endsAt: string;
   status: AuctionStatus;
   tags: string[];
+  provenance?: string | null;
+  provenanceProofUrls?: string[];
   bidCount: number;
   viewCount: number;
   images: AuctionImage[];
