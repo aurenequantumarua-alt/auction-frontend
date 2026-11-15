@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Landmark } from 'lucide-react';
+import { Landmark, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { useEarnings, useMyListings } from '@/features/auctions/hooks';
@@ -11,79 +11,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { useAuthStore } from '@/features/auth/authStore';
 import { api, extractApiError } from '@/lib/api';
-
-// ── Ship Item Modal ───────────────────────────────────────────────────────
-const ShipModal = ({
-  settlementId,
-  auctionTitle,
-  onClose,
-  onSuccess,
-}: {
-  settlementId: string;
-  auctionTitle: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}) => {
-  const [courierName, setCourierName] = useState('');
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!courierName.trim()) return toast.error('Enter the courier / carrier name');
-    if (!trackingNumber.trim()) return toast.error('Enter the tracking number');
-    setSubmitting(true);
-    try {
-      await api.post(`/settlements/${settlementId}/ship`, { courierName, trackingNumber });
-      toast.success('Item marked as shipped!');
-      onSuccess();
-    } catch (err) {
-      toast.error(extractApiError(err).message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-line bg-canvas p-6 shadow-xl">
-        <h3 className="font-display text-lg font-semibold">Dispatch Item</h3>
-        <p className="mt-1 text-sm text-muted">
-          Ship &ldquo;{auctionTitle}&rdquo; and provide tracking details.
-        </p>
-
-        <div className="mt-5 space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium">Courier / Carrier Name</label>
-            <input
-              type="text"
-              placeholder="e.g. India Post, Blue Dart, DTDC"
-              className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-sm"
-              value={courierName}
-              onChange={(e) => setCourierName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Tracking Number / AWB</label>
-            <input
-              type="text"
-              placeholder="e.g. EE123456789IN"
-              className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-sm"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Mark as Shipped'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { ShipModal, type ShippingAddressInfo } from '@/features/auctions/components/ShipModal';
 
 export const SellPage = () => {
   const user = useAuthStore((s) => s.user);
@@ -91,7 +19,11 @@ export const SellPage = () => {
   const earnings = useEarnings();
   const { data: bankData, isLoading: bankLoading } = useBankAccount(!!user);
   const needsBank = !!user && !bankLoading && !bankData?.bankAccount;
-  const [shipModal, setShipModal] = useState<{ settlementId: string; title: string } | null>(null);
+  const [shipModal, setShipModal] = useState<{
+    settlementId: string;
+    title: string;
+    shippingAddress?: ShippingAddressInfo | null;
+  } | null>(null);
 
   const handleMarkDelivered = async (settlementId: string) => {
     try {
@@ -167,7 +99,7 @@ export const SellPage = () => {
         ) : (
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {listings.data!.items.map((a) => {
-              const settlement = (a as any).settlement as {
+              const settlement = (a as any).settlement as ({
                 id: string;
                 status: string;
                 shippedAt: string | null;
@@ -175,7 +107,7 @@ export const SellPage = () => {
                 courierName: string | null;
                 deliveredAt: string | null;
                 shippingDeadline: string | null;
-              } | undefined;
+              } & ShippingAddressInfo) | undefined;
 
               const isEscrow = settlement?.status === 'ESCROW_HOLD';
               const isDelivered = settlement?.status === 'DELIVERED_PENDING';
@@ -196,14 +128,43 @@ export const SellPage = () => {
 
                   {/* Escrow actions for the seller */}
                   {settlement && isEscrow && !settlement.shippedAt && (
-                    <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
+                    <div className="rounded-md border border-accent/30 bg-accent/5 p-3 space-y-2">
                       <p className="text-xs text-muted">
                         Buyer&apos;s payment is secured in escrow. Ship the item to receive your payout.
                       </p>
+                      {settlement.shippingAddress && (
+                        <div className="rounded bg-canvas/80 border border-line p-2 text-xs text-[#0E1622] flex items-start gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-[#8E764E] flex-none mt-0.5" />
+                          <div>
+                            <span className="font-semibold text-[11px] text-[#8E764E] uppercase tracking-wider block">
+                              Deliver To:
+                            </span>
+                            <span className="font-medium">
+                              {settlement.shippingName ? `${settlement.shippingName} — ` : ''}
+                            </span>
+                            <span className="text-[#554734]">
+                              {settlement.shippingCity}, {settlement.shippingState} ({settlement.shippingPostalCode})
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       <Button
                         size="sm"
-                        className="mt-2"
-                        onClick={() => setShipModal({ settlementId: settlement.id, title: a.title })}
+                        className="mt-1"
+                        onClick={() =>
+                          setShipModal({
+                            settlementId: settlement.id,
+                            title: a.title,
+                            shippingAddress: {
+                              shippingName: settlement.shippingName,
+                              shippingPhone: settlement.shippingPhone,
+                              shippingAddress: settlement.shippingAddress,
+                              shippingCity: settlement.shippingCity,
+                              shippingState: settlement.shippingState,
+                              shippingPostalCode: settlement.shippingPostalCode,
+                            },
+                          })
+                        }
                       >
                         Dispatch Item
                       </Button>
@@ -253,6 +214,7 @@ export const SellPage = () => {
         <ShipModal
           settlementId={shipModal.settlementId}
           auctionTitle={shipModal.title}
+          shippingAddress={shipModal.shippingAddress}
           onClose={() => setShipModal(null)}
           onSuccess={() => {
             setShipModal(null);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { MapPin } from 'lucide-react';
 import { useMyWins } from '@/features/auctions/hooks';
 import { formatPrice, formatRelative } from '@/lib/format';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -11,6 +12,8 @@ import { loadRazorpay } from '@/lib/razorpay';
 import { useAuthStore } from '@/features/auth/authStore';
 import { sanitize } from '@/lib/sanitize';
 import { DisputeModal } from '@/features/auctions/components/DisputeModal';
+import { AddressCheckoutModal } from '@/features/auctions/components/AddressCheckoutModal';
+import type { ShippingAddressInfo } from '@/features/auctions/components/ShipModal';
 
 type CheckoutResponse =
   | { provider: 'mock'; message?: string; settlementId: string; amountDue: string }
@@ -79,10 +82,29 @@ export const WonAuctionsPage = () => {
   const { data, isLoading, refetch } = useMyWins();
   const user = useAuthStore((s) => s.user);
   const [disputeSettlementId, setDisputeSettlementId] = useState<string | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = useState<{
+    settlementId: string;
+    title: string;
+    amount: string;
+    existingAddress?: ShippingAddressInfo | null;
+  } | null>(null);
 
-  const handleCheckout = async (settlementId: string) => {
+  const handleStartPayment = async (address: ShippingAddressInfo) => {
+    if (!checkoutTarget) return;
+    const { settlementId } = checkoutTarget;
     try {
-      const { data: res } = await api.post<CheckoutResponse>(`/payments/checkout/${settlementId}`);
+      const { data: res } = await api.post<CheckoutResponse>(
+        `/payments/checkout/${settlementId}`,
+        address,
+      );
+
+      if (res.provider === 'mock') {
+        await api.post(`/payments/mock-complete/${settlementId}`, address);
+        toast.success('Payment secured in Escrow! Delivery address sent to seller.');
+        setCheckoutTarget(null);
+        void refetch();
+        return;
+      }
 
       if (res.provider !== 'razorpay') {
         toast.error('Payment gateway is currently unavailable. Please try again.');
@@ -102,8 +124,12 @@ export const WonAuctionsPage = () => {
         name: res.name,
         description: res.description,
         order_id: res.orderId,
-        prefill: { name: user?.name, email: user?.email },
-        theme: { color: '#1c1917' },
+        prefill: {
+          name: address.shippingName || user?.name,
+          email: user?.email,
+          contact: address.shippingPhone || undefined,
+        },
+        theme: { color: '#0E1622' },
         handler: async (resp) => {
           try {
             await api.post(`/payments/verify/${settlementId}`, {
@@ -111,17 +137,23 @@ export const WonAuctionsPage = () => {
               razorpayPaymentId: resp.razorpay_payment_id,
               razorpaySignature: resp.razorpay_signature,
             });
-            toast.success('Payment secured in Escrow! Wait for the seller to ship.');
+            toast.success('Payment secured in Escrow! Delivery address registered with the seller.');
           } catch {
             toast.info(
               'Payment received! Your order will be confirmed shortly.',
               { duration: 6000 },
             );
           } finally {
+            setCheckoutTarget(null);
             void refetch();
           }
         },
-        modal: { ondismiss: () => toast.info('Payment cancelled.') },
+        modal: {
+          ondismiss: () => {
+            toast.info('Payment cancelled.');
+            setCheckoutTarget(null);
+          },
+        },
       });
       rzp.on('payment.failed', (r) => toast.error(r.error?.description ?? 'Payment failed.'));
       rzp.open();
@@ -200,13 +232,39 @@ export const WonAuctionsPage = () => {
                     )}
                     {isPending && settlement && (
                       <div className="flex flex-wrap items-center gap-2">
-                        <Button size="sm" onClick={() => handleCheckout(settlement.id)}>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            setCheckoutTarget({
+                              settlementId: settlement.id,
+                              title: w.auction.title,
+                              amount: w.amount,
+                              existingAddress: settlement,
+                            })
+                          }
+                        >
                           Pay {formatPrice(w.amount, true)}
                         </Button>
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* ── Delivery address registered card ────────────────────── */}
+                {settlement && settlement.shippingAddress && (
+                  <div className="mt-3 flex items-start gap-2.5 rounded-md border border-line bg-canvas-subtle p-3 text-xs text-muted">
+                    <MapPin className="h-4 w-4 flex-none text-ink mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-ink">Shipping Destination Registered:</p>
+                      <p className="mt-0.5 text-ink">
+                        {settlement.shippingName} · {settlement.shippingAddress}, {settlement.shippingCity}, {settlement.shippingState} – {settlement.shippingPostalCode}
+                      </p>
+                      {settlement.shippingPhone && (
+                        <p className="mt-0.5 text-muted">Contact: <span className="font-mono text-ink">{settlement.shippingPhone}</span></p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Escrow status details ─────────────────────────────── */}
                 {settlement && isEscrow && (
@@ -299,6 +357,19 @@ export const WonAuctionsPage = () => {
             setDisputeSettlementId(null);
             void refetch();
           }}
+        />
+      )}
+
+      {/* Delivery Address & Checkout Modal */}
+      {checkoutTarget && (
+        <AddressCheckoutModal
+          settlementId={checkoutTarget.settlementId}
+          auctionTitle={checkoutTarget.title}
+          amount={checkoutTarget.amount}
+          defaultName={user?.name}
+          existingAddress={checkoutTarget.existingAddress}
+          onClose={() => setCheckoutTarget(null)}
+          onProceed={handleStartPayment}
         />
       )}
     </div>

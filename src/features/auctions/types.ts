@@ -69,6 +69,12 @@ export interface AuctionDetail extends AuctionListItem {
       amount: string;
     } | null;
     attemptCount: number;
+    shippingName?: string | null;
+    shippingPhone?: string | null;
+    shippingAddress?: string | null;
+    shippingCity?: string | null;
+    shippingState?: string | null;
+    shippingPostalCode?: string | null;
     shippedAt: string | null;
     trackingNumber: string | null;
     courierName: string | null;
